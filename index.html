@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECBusiness - Gestão Inteligente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+    <div id="loginPage" class="flex items-center justify-center min-h-screen">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md border border-slate-200">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-blue-600">ECBusiness</h1>
+                <p class="text-slate-500">Gestão Inteligente de Empréstimos</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">E-mail</label>
+                    <input type="email" id="loginEmail" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Email">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Senha</label>
+                    <input type="password" id="loginPass" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Senha">
+                </div>
+                <button onclick="app.auth.login()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition">Entrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="dashboard" class="hidden flex min-h-screen">
+        <aside class="w-64 bg-slate-900 text-white flex flex-col">
+            <div class="p-6 text-2xl font-bold border-b border-slate-800 text-blue-400">ECBusiness</div>
+            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+                <button onclick="app.ui.switchTab('emprestimos')" class="nav-link w-full text-left p-3 rounded-lg hover:bg-slate-800 flex items-center gap-3"><i class="fa-solid fa-hand-holding-dollar w-5"></i> Empréstimos</button>
+                <button onclick="app.ui.switchTab('doadores')" class="nav-link w-full text-left p-3 rounded-lg hover:bg-slate-800 flex items-center gap-3"><i class="fa-solid fa-heart w-5"></i> Doadores</button>
+                <button onclick="app.ui.switchTab('fornecedores')" class="nav-link w-full text-left p-3 rounded-lg hover:bg-slate-800 flex items-center gap-3"><i class="fa-solid fa-truck w-5"></i> Fornecedores</button>
+                <button onclick="app.ui.switchTab('notificacoes')" class="nav-link w-full text-left p-3 rounded-lg hover:bg-slate-800 flex items-center gap-3"><i class="fa-solid fa-bell w-5"></i> Notificações <span id="notifBadge" class="bg-red-500 text-[10px] px-1.5 rounded-full hidden">0</span></button>
+                <button onclick="app.ui.switchTab('historico')" class="nav-link w-full text-left p-3 rounded-lg hover:bg-slate-800 flex items-center gap-3"><i class="fa-solid fa-clock-rotate-left w-5"></i> Histórico</button>
+                <button onclick="app.ui.switchTab('backups')" class="nav-link w-full text-left p-3 rounded-lg hover:bg-slate-800 flex items-center gap-3"><i class="fa-solid fa-database w-5"></i> Backups</button>
+                <button id="adminTab" onclick="app.ui.switchTab('usuarios')" class="nav-link w-full text-left p-3 rounded-lg hover:bg-slate-800 flex items-center gap-3 text-red-400 hidden"><i class="fa-solid fa-users-gear w-5"></i> Usuários (Admin)</button>
+            </nav>
+            <div class="p-4 border-t border-slate-800">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center font-bold" id="userInitial">U</div>
+                    <div class="text-sm">
+                        <p class="font-bold truncate" id="userName">Usuário</p>
+                        <p class="text-xs text-slate-400" id="userRole">Perfil</p>
+                    </div>
+                </div>
+                <button onclick="app.auth.logout()" class="w-full text-left text-red-400 text-sm hover:text-red-300">Sair <i class="fa-solid fa-right-from-bracket ml-2"></i></button>
+            </div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto p-8">
+            <header class="mb-8 flex justify-between items-center">
+                <h2 id="tabTitle" class="text-3xl font-bold text-slate-800">Empréstimos</h2>
+                <div id="headerActions"></div>
+            </header>
+
+            <div id="content-emprestimos" class="tab-content space-y-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-bold mb-4">Novo Empréstimo</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        <input type="text" id="loanClient" placeholder="Cliente" class="p-2 border rounded-lg outline-none">
+                        <input type="number" id="loanValue" placeholder="Valor (R$)" class="p-2 border rounded-lg outline-none" oninput="app.loans.updatePreview()">
+                        <input type="number" id="loanRate" placeholder="Juros (%)" class="p-2 border rounded-lg outline-none" oninput="app.loans.updatePreview()">
+                        <input type="number" id="loanDays" placeholder="Prazo (Dias)" class="p-2 border rounded-lg outline-none" oninput="app.loans.updatePreview()">
+                        <input type="text" id="loanWhatsApp" placeholder="WhatsApp" class="p-2 border rounded-lg outline-none">
+                    </div>
+                    <div class="mt-4 flex justify-between items-center bg-blue-50 p-3 rounded-lg">
+                        <span class="font-bold text-blue-800">Total a Receber: <span id="loanPreview">R$ 0,00</span></span>
+                        <button onclick="app.loans.add()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700">Cadastrar</button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-100 text-slate-600 text-sm">
+                            <tr>
+                                <th class="p-4">Cliente</th>
+                                <th class="p-4">Valor Original</th>
+                                <th class="p-4">Total c/ Juros</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="loanTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="content-fornecedores" class="tab-content hidden space-y-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <input type="text" id="supName" placeholder="Fornecedor" class="p-2 border rounded-lg outline-none">
+                        <input type="number" id="supValue" placeholder="Valor (R$)" class="p-2 border rounded-lg outline-none">
+                        <input type="text" id="supPix" placeholder="Chave Pix" class="p-2 border rounded-lg outline-none">
+                        <button onclick="app.suppliers.add()" class="bg-blue-600 text-white rounded-lg font-bold">Cadastrar Fornecedor</button>
+                    </div>
+                </div>
+                <div id="supGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+            </div>
+
+            <div id="content-historico" class="tab-content hidden">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-100 text-slate-600 text-sm">
+                            <tr>
+                                <th class="p-4">Usuário</th>
+                                <th class="p-4">Ação</th>
+                                <th class="p-4">Data/Hora</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="content-doadores" class="tab-content hidden"><p class="p-8 text-slate-400">Módulo de Doadores Ativo. Funciona similar aos Empréstimos.</p></div>
+            <div id="content-notificacoes" class="tab-content hidden"><div id="notifList" class="space-y-4"></div></div>
+            <div id="content-backups" class="tab-content hidden"><div class="p-8 text-center bg-white rounded-xl border border-dashed border-slate-300"><button onclick="app.backups.create()" class="bg-slate-800 text-white px-6 py-3 rounded-xl font-bold"><i class="fa-solid fa-download mr-2"></i> Gerar Backup Completo (JSON)</button></div></div>
+            <div id="content-usuarios" class="tab-content hidden"><p class="p-8 text-red-500 font-bold">Acesso Restrito: Painel Administrativo de Usuários.</p></div>
+
+        </main>
+    </div>
+
+    <script>
+        // CORE DA APLICAÇÃO
+        const app = {
+            state: {
+                user: null,
+                loans: JSON.parse(localStorage.getItem('ec_loans')) || [],
+                history: JSON.parse(localStorage.getItem('ec_history')) || [],
+                suppliers: JSON.parse(localStorage.getItem('ec_suppliers')) || [],
+                notifs: []
+            },
+
+            auth: {
+                login: () => {
+                    const email = document.getElementById('loginEmail').value;
+                    const pass = document.getElementById('loginPass').value;
+
+                    if (email === 'yamadaki1304@gmail.com' && pass === 'Lobosdefg-1') {
+                        app.state.user = { nome: 'Administrador Principal', email, role: 'admin' };
+                    } else if (email === 'user@teste.com' && pass === '123') {
+                        app.state.user = { nome: 'João Silva', email, role: 'comum' };
+                    } else {
+                        alert('Credenciais inválidas!');
+                        return;
+                    }
+
+                    document.getElementById('loginPage').classList.add('hidden');
+                    document.getElementById('dashboard').classList.remove('hidden');
+                    app.ui.init();
+                },
+                logout: () => location.reload()
+            },
+
+            loans: {
+                calculateTotal: (val, rate, days) => {
+                    const months = days / 30;
+                    return val + (val * (rate / 100) * months);
+                },
+                updatePreview: () => {
+                    const val = parseFloat(document.getElementById('loanValue').value) || 0;
+                    const rate = parseFloat(document.getElementById('loanRate').value) || 0;
+                    const days = parseFloat(document.getElementById('loanDays').value) || 0;
+                    const total = app.loans.calculateTotal(val, rate, days);
+                    document.getElementById('loanPreview').innerText = 'R$ ' + total.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                },
+                add: () => {
+                    const loan = {
+                        id: Date.now(),
+                        cliente: document.getElementById('loanClient').value,
+                        valor: parseFloat(document.getElementById('loanValue').value),
+                        taxa: parseFloat(document.getElementById('loanRate').value),
+                        prazo: parseInt(document.getElementById('loanDays').value),
+                        whats: document.getElementById('loanWhatsApp').value,
+                        status: 'pendente',
+                        data: new Date().toLocaleDateString()
+                    };
+                    app.state.loans.push(loan);
+                    app.utils.saveAndLog('Empréstimo Criado', `Cliente: ${loan.cliente}`);
+                    app.ui.renderLoans();
+                }
+            },
+
+            suppliers: {
+                add: () => {
+                    const sup = {
+                        id: Date.now(),
+                        nome: document.getElementById('supName').value,
+                        valor: document.getElementById('supValue').value,
+                        pix: document.getElementById('supPix').value,
+                        status: 'pendente'
+                    };
+                    app.state.suppliers.push(sup);
+                    app.utils.saveAndLog('Fornecedor Criado', sup.nome);
+                    app.ui.renderSuppliers();
+                }
+            },
+
+            backups: {
+                create: () => {
+                    const data = JSON.stringify(app.state);
+                    const blob = new Blob([data], {type: 'application/json'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `backup_ec_business_${Date.now()}.json`;
+                    a.click();
+                    app.utils.log('Backup Realizado', 'Download do arquivo JSON');
+                }
+            },
+
+            ui: {
+                init: () => {
+                    document.getElementById('userName').innerText = app.state.user.nome;
+                    document.getElementById('userRole').innerText = app.state.user.role === 'admin' ? 'Administrador' : 'Usuário Comum';
+                    document.getElementById('userInitial').innerText = app.state.user.nome.charAt(0);
+                    if(app.state.user.role === 'admin') document.getElementById('adminTab').classList.remove('hidden');
+                    app.ui.renderLoans();
+                    app.ui.renderSuppliers();
+                    app.ui.renderHistory();
+                },
+                switchTab: (tabId) => {
+                    document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+                    document.getElementById('content-' + tabId).classList.remove('hidden');
+                    document.getElementById('tabTitle').innerText = tabId.charAt(0).toUpperCase() + tabId.slice(1);
+                },
+                renderLoans: () => {
+                    const body = document.getElementById('loanTableBody');
+                    body.innerHTML = app.state.loans.map(l => {
+                        const total = app.loans.calculateTotal(l.valor, l.taxa, l.prazo);
+                        return `
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
+                                <td class="p-4 font-bold">${l.cliente}</td>
+                                <td class="p-4 text-slate-500">R$ ${l.valor.toLocaleString()}</td>
+                                <td class="p-4 text-blue-700 font-bold">R$ ${total.toLocaleString()}</td>
+                                <td class="p-4"><span class="px-2 py-1 rounded-full text-xs font-bold ${l.status === 'pendente' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}">${l.status.toUpperCase()}</span></td>
+                                <td class="p-4 text-right space-x-2">
+                                    <button class="text-green-600 hover:bg-green-50 p-2 rounded" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></button>
+                                    <button class="text-blue-600 hover:bg-blue-50 p-2 rounded" onclick="app.utils.darBaixa(${l.id})">✅ Baixa</button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                },
+                renderSuppliers: () => {
+                    const grid = document.getElementById('supGrid');
+                    grid.innerHTML = app.state.suppliers.map(s => `
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <h4 class="font-bold text-lg">${s.nome}</h4>
+                            <p class="text-2xl font-bold text-red-500 my-2">R$ ${parseFloat(s.valor).toLocaleString()}</p>
+                            <div class="bg-slate-100 p-2 rounded text-xs font-mono break-all mb-4">PIX: ${s.pix}</div>
+                            <button onclick="navigator.clipboard.writeText('${s.pix}'); alert('Pix Copiado!')" class="w-full bg-slate-800 text-white py-2 rounded-lg text-sm mb-2"><i class="fa-solid fa-copy mr-2"></i> Copiar Chave</button>
+                            <button class="w-full border border-green-600 text-green-600 py-2 rounded-lg text-sm font-bold">Marcar como Pago</button>
+                        </div>
+                    `).join('');
+                },
+                renderHistory: () => {
+                    const body = document.getElementById('historyTableBody');
+                    body.innerHTML = app.state.history.reverse().map(h => `
+                        <tr class="border-b text-sm">
+                            <td class="p-4">${h.user}</td>
+                            <td class="p-4"><span class="font-bold">${h.acao}</span>: ${h.desc}</td>
+                            <td class="p-4 text-slate-400">${h.data}</td>
+                        </tr>
+                    `).join('');
+                }
+            },
+
+            utils: {
+                log: (acao, desc) => {
+                    const entry = { user: app.state.user.nome, acao, desc, data: new Date().toLocaleString() };
+                    app.state.history.push(entry);
+                    localStorage.setItem('ec_history', JSON.stringify(app.state.history));
+                    app.ui.renderHistory();
+                },
+                saveAndLog: (acao, desc) => {
+                    localStorage.setItem('ec_loans', JSON.stringify(app.state.loans));
+                    localStorage.setItem('ec_suppliers', JSON.stringify(app.state.suppliers));
+                    app.utils.log(acao, desc);
+                },
+                darBaixa: (id) => {
+                    const loan = app.state.loans.find(l => l.id === id);
+                    if(loan) {
+                        loan.status = 'pago';
+                        app.utils.saveAndLog('Status Alterado', `Empréstimo de ${loan.cliente} marcado como PAGO`);
+                        app.ui.renderLoans();
+                    }
+                }
+            }
+        };
+    </script>
+</body>
+</html>
