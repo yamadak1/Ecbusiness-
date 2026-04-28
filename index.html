@@ -6,25 +6,15 @@
     <title>ECBusiness - Gestão Inteligente</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
     <style>
-        /* Animação suave para o menu móvel */
-        #mobileSidebar {
-            transition: transform 0.3s ease-in-out;
-            transform: translateX(-100%);
-        }
-        #mobileSidebar.open {
-            transform: translateX(0);
-        }
-        /* Overlay escuro quando o menu está aberto */
-        #sidebarOverlay {
-            transition: opacity 0.3s ease-in-out;
-            opacity: 0;
-            pointer-events: none;
-        }
-        #sidebarOverlay.show {
-            opacity: 0.5;
-            pointer-events: auto;
-        }
+        #mobileSidebar { transition: transform 0.3s ease-in-out; transform: translateX(-100%); }
+        #mobileSidebar.open { transform: translateX(0); }
+        #sidebarOverlay { transition: opacity 0.3s ease-in-out; opacity: 0; pointer-events: none; }
+        #sidebarOverlay.show { opacity: 0.5; pointer-events: auto; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
     </style>
@@ -52,7 +42,6 @@
     </div>
 
     <div id="dashboard" class="hidden flex-1 flex flex-col">
-        
         <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
             <div class="flex items-center justify-between p-4">
                 <div class="flex items-center gap-3">
@@ -61,9 +50,7 @@
                     </button>
                     <h1 class="text-xl font-bold text-slate-800" id="headerTitle">Empréstimos</h1>
                 </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center font-bold text-white shadow-inner" id="userInitialHeader">U</div>
-                </div>
+                <div class="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center font-bold text-white shadow-inner" id="userInitialHeader">U</div>
             </div>
         </header>
 
@@ -72,21 +59,17 @@
         <aside id="mobileSidebar" class="fixed inset-y-0 left-0 w-72 bg-slate-900 text-white flex flex-col z-50 shadow-2xl">
             <div class="p-5 text-2xl font-bold border-b border-slate-800 text-blue-400 flex justify-between items-center">
                 ECBusiness
-                <button onclick="app.ui.toggleMenu()" class="text-slate-500 hover:text-white lg:hidden">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
+                <button onclick="app.ui.toggleMenu()" class="text-slate-500 hover:text-white lg:hidden"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <nav class="flex-1 p-4 space-y-1.5 overflow-y-auto">
                 <button onclick="app.ui.switchTab('emprestimos')" class="nav-link w-full text-left p-3.5 rounded-lg hover:bg-slate-800 flex items-center gap-3.5 transition active:bg-slate-700"><i class="fa-solid fa-hand-holding-dollar w-5 text-blue-400"></i> Empréstimos</button>
-                <button onclick="app.ui.switchTab('doadores')" class="nav-link w-full text-left p-3.5 rounded-lg hover:bg-slate-800 flex items-center gap-3.5 transition active:bg-slate-700"><i class="fa-solid fa-heart w-5 text-red-400"></i> Doadores</button>
                 <button onclick="app.ui.switchTab('fornecedores')" class="nav-link w-full text-left p-3.5 rounded-lg hover:bg-slate-800 flex items-center gap-3.5 transition active:bg-slate-700"><i class="fa-solid fa-truck w-5 text-amber-400"></i> Fornecedores</button>
                 <button onclick="app.ui.switchTab('notificacoes')" class="nav-link w-full text-left p-3.5 rounded-lg hover:bg-slate-800 flex items-center gap-3.5 transition active:bg-slate-700"><i class="fa-solid fa-bell w-5 text-purple-400"></i> Notificações</button>
                 <button onclick="app.ui.switchTab('historico')" class="nav-link w-full text-left p-3.5 rounded-lg hover:bg-slate-800 flex items-center gap-3.5 transition active:bg-slate-700"><i class="fa-solid fa-clock-rotate-left w-5 text-emerald-400"></i> Histórico</button>
-                <button onclick="app.ui.switchTab('backups')" class="nav-link w-full text-left p-3.5 rounded-lg hover:bg-slate-800 flex items-center gap-3.5 transition active:bg-slate-700"><i class="fa-solid fa-database w-5 text-indigo-400"></i> Backups</button>
                 
                 <div id="adminMenuSection" class="hidden pt-4 border-t border-slate-800 mt-4">
                     <p class="px-3 text-xs font-bold text-slate-500 uppercase mb-2">Administração</p>
-                    <button id="adminTab" onclick="app.ui.switchTab('usuarios')" class="nav-link w-full text-left p-3.5 rounded-lg hover:bg-red-950 text-red-300 flex items-center gap-3.5 transition active:bg-red-900"><i class="fa-solid fa-users-gear w-5"></i> Gerenciar Usuários</button>
+                    <button onclick="app.ui.switchTab('usuarios')" class="nav-link w-full text-left p-3.5 rounded-lg hover:bg-red-950 text-red-300 flex items-center gap-3.5 transition active:bg-red-900"><i class="fa-solid fa-users-gear w-5"></i> Gerenciar Usuários</button>
                 </div>
             </nav>
             <div class="p-4 border-t border-slate-800 bg-slate-950">
@@ -97,12 +80,11 @@
                         <p class="text-xs text-slate-400" id="userRole">Perfil</p>
                     </div>
                 </div>
-                <button onclick="app.auth.logout()" class="w-full text-center text-red-400 text-sm font-bold hover:bg-red-950 p-3 rounded-lg transition border border-red-900">Sair <i class="fa-solid fa-right-from-bracket ml-2"></i></button>
+                <button onclick="app.auth.logout()" class="w-full text-center text-red-400 text-sm font-bold hover:bg-red-950 p-3 rounded-lg transition border border-red-900">Sair</button>
             </div>
         </aside>
 
         <main class="flex-1 bg-white p-4 md:p-8">
-            
             <div id="content-emprestimos" class="tab-content active space-y-6">
                 <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-inner">
                     <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-blue-700"><i class="fa-solid fa-plus-circle"></i> Novo Empréstimo</h3>
@@ -127,14 +109,14 @@
 
             <div id="content-usuarios" class="tab-content space-y-6">
                 <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
-                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-red-700"><i class="fa-solid fa-user-plus"></i> Adicionar Novo Usuário</h3>
+                    <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-red-700"><i class="fa-solid fa-user-plus"></i> Novo Usuário</h3>
                     <div class="grid grid-cols-1 gap-4">
                         <input type="text" id="newUserName" placeholder="Nome Completo" class="p-3 border rounded-lg bg-white">
                         <input type="email" id="newUserEmail" placeholder="E-mail de Acesso" class="p-3 border rounded-lg bg-white">
                         <input type="password" id="newUserPass" placeholder="Senha Provisória" class="p-3 border rounded-lg bg-white">
                         <select id="newUserRole" class="p-3 border rounded-lg bg-white">
-                            <option value="comum">Perfil: Usuário Comum</option>
-                            <option value="admin">Perfil: Administrador</option>
+                            <option value="comum">Usuário Comum</option>
+                            <option value="admin">Administrador</option>
                         </select>
                         <button onclick="app.users.add()" class="bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 transition active:scale-95">Criar Usuário</button>
                     </div>
@@ -142,281 +124,166 @@
                 <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-slate-100 text-slate-600 uppercase text-xs font-bold">
-                            <tr>
-                                <th class="p-4">Nome/Email</th>
-                                <th class="p-4">Perfil</th>
-                                <th class="p-4 text-right">Ações</th>
-                            </tr>
+                            <tr><th class="p-4">Nome/Email</th><th class="p-4">Perfil</th><th class="p-4 text-right">Ações</th></tr>
                         </thead>
                         <tbody id="userTableBody" class="divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
             </div>
 
-            <div id="content-doadores" class="tab-content p-4 text-center text-slate-500">Módulo de Doadores</div>
             <div id="content-fornecedores" class="tab-content p-4 text-center text-slate-500">Módulo de Fornecedores</div>
             <div id="content-notificacoes" class="tab-content p-4 text-center text-slate-500">Sem notificações recentes</div>
-            <div id="content-historico" class="tab-content p-4 text-center text-slate-500">Histórico de ações</div>
-            <div id="content-backups" class="tab-content p-4 text-center text-slate-500">Gestão de Backups</div>
-
+            <div id="content-historico" class="tab-content p-4 space-y-3" id="historicoList"></div>
         </main>
     </div>
 
     <script>
-        // CONFIGURAÇÃO DO ADMINISTRADOR PADRÃO (CONFORME SOLICITADO)
-        const ADMIN_DEFAULT = {
-            email: 'yamadaki1304@gmail.com',
-            pass: 'Lobosdefg-1'
+        // CONFIGURAÇÕES FIREBASE (EXTRAÍDAS DA SUA IMAGEM 122542.png)
+        const firebaseConfig = {
+            apiKey: "AIzaSyB8Zo9q55deQdI-QtfHOSGqURXqvR8Mfn8",
+            authDomain: "ecbusiness-app.firebaseapp.com",
+            databaseURL: "https://ecbusiness-app-default-rtdb.firebaseio.com",
+            projectId: "ecbusiness-app",
+            storageBucket: "ecbusiness-app.firebasestorage.app",
+            messagingSenderId: "943619157636",
+            appId: "1:943619157636:web:db3d9a507d102b9e34dc04"
         };
 
-        // CORE DA APLICAÇÃO
+        // INICIALIZAÇÃO FIREBASE
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const ADMIN_DEFAULT = { email: 'yamadaki1304@gmail.com', pass: 'Lobosdefg-1' };
+
         const app = {
-            state: {
-                user: null,
-                loans: JSON.parse(localStorage.getItem('ec_loans')) || [],
-                // Carrega usuários do LocalStorage ou inicia vazio
-                sysUsers: JSON.parse(localStorage.getItem('ec_sysusers')) || [] 
+            state: { user: null, loans: [], sysUsers: [], logs: [] },
+
+            // SINCRONIZAÇÃO EM TEMPO REAL
+            sync: () => {
+                db.ref('loans').on('value', snap => {
+                    app.state.loans = [];
+                    snap.forEach(c => { app.state.loans.push({id: c.key, ...c.val()}); });
+                    app.ui.renderLoans();
+                });
+                db.ref('users').on('value', snap => {
+                    app.state.sysUsers = [];
+                    snap.forEach(c => { app.state.sysUsers.push({id: c.key, ...c.val()}); });
+                    if(app.state.user?.role === 'admin') app.ui.renderUsers();
+                });
+                db.ref('logs').limitToLast(20).on('value', snap => {
+                    app.state.logs = [];
+                    snap.forEach(c => { app.state.logs.unshift(c.val()); });
+                    app.ui.renderLogs();
+                });
             },
 
             auth: {
                 login: () => {
-                    const email = document.getElementById('loginEmail').value;
-                    const pass = document.getElementById('loginPass').value;
-
-                    // 1. Verifica ADM Padrão (Hardcoded)
-                    if (email === ADMIN_DEFAULT.email && pass === ADMIN_DEFAULT.pass) {
-                        app.state.user = { nome: 'Criador/Adm', email, role: 'admin' };
-                    } 
-                    // 2. Verifica usuários cadastrados no sistema (LocalStorage)
-                    else {
-                        const foundUser = app.state.sysUsers.find(u => u.email === email && u.pass === pass);
-                        if (foundUser) {
-                            app.state.user = { nome: foundUser.nome, email: foundUser.email, role: foundUser.role };
-                        } else {
-                            alert('Credenciais inválidas! Tente novamente.');
-                            return;
-                        }
+                    const e = document.getElementById('loginEmail').value;
+                    const p = document.getElementById('loginPass').value;
+                    if (e === ADMIN_DEFAULT.email && p === ADMIN_DEFAULT.pass) {
+                        app.state.user = { nome: 'Criador/Adm', email: e, role: 'admin' };
+                    } else {
+                        const u = app.state.sysUsers.find(u => u.email === e && u.pass === p);
+                        if (u) app.state.user = u;
+                        else return alert('Acesso negado!');
                     }
-
-                    // Esconde login, mostra dashboard
                     document.getElementById('loginPage').classList.add('hidden');
                     document.getElementById('dashboard').classList.remove('hidden');
                     app.ui.init();
+                    app.sync();
                 },
                 logout: () => location.reload()
             },
 
-            // GESTÃO DE USUÁRIOS (AGORA FUNCIONAL)
-            users: {
-                add: () => {
-                    // Segurança: Apenas ADM pode adicionar
-                    if (app.state.user.role !== 'admin') return alert('Acesso negado.');
-
-                    const nome = document.getElementById('newUserName').value;
-                    const email = document.getElementById('newUserEmail').value;
-                    const pass = document.getElementById('newUserPass').value;
-                    const role = document.getElementById('newUserRole').value;
-
-                    if (!nome || !email || !pass) return alert('Preencha todos os campos do novo usuário.');
-
-                    // Verifica se e-mail já existe (incluindo o ADM padrão)
-                    if (email === ADMIN_DEFAULT.email || app.state.sysUsers.some(u => u.email === email)) {
-                        return alert('Este e-mail já está cadastrado no sistema.');
-                    }
-
-                    const newUser = { id: Date.now(), nome, email, pass, role, date: new Date().toLocaleDateString() };
-                    app.state.sysUsers.push(newUser);
-                    
-                    // Salva no LocalStorage
-                    localStorage.setItem('ec_sysusers', JSON.stringify(app.state.sysUsers));
-                    alert('Usuário criado com sucesso!');
-                    
-                    // Limpa campos e renderiza tabela
-                    document.getElementById('newUserName').value = '';
-                    document.getElementById('newUserEmail').value = '';
-                    document.getElementById('newUserPass').value = '';
-                    app.ui.renderUsers();
-                },
-                remove: (id) => {
-                    if (app.state.user.role !== 'admin') return alert('Acesso negado.');
-                    if (!confirm('Tem certeza que deseja remover este usuário?')) return;
-
-                    app.state.sysUsers = app.state.sysUsers.filter(u => u.id !== id);
-                    localStorage.setItem('ec_sysusers', JSON.stringify(app.state.sysUsers));
-                    app.ui.renderUsers();
-                }
-            },
-
             loans: {
-                calculateTotal: (val, rate, days) => {
-                    const months = days / 30;
-                    return val + (val * (rate / 100) * months);
-                },
+                calculateTotal: (v, r, d) => v + (v * (r / 100) * (d / 30)),
                 updatePreview: () => {
-                    const val = parseFloat(document.getElementById('loanValue').value) || 0;
-                    const rate = parseFloat(document.getElementById('loanRate').value) || 0;
-                    const days = parseFloat(document.getElementById('loanDays').value) || 0;
-                    const total = app.loans.calculateTotal(val, rate, days);
-                    document.getElementById('loanPreview').innerText = 'R$ ' + total.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                    const v = parseFloat(document.getElementById('loanValue').value) || 0;
+                    const r = parseFloat(document.getElementById('loanRate').value) || 0;
+                    const d = parseFloat(document.getElementById('loanDays').value) || 0;
+                    const t = app.loans.calculateTotal(v, r, d);
+                    document.getElementById('loanPreview').innerText = 'R$ ' + t.toLocaleString('pt-BR', {minimumFractionDigits: 2});
                 },
                 add: () => {
-                    const cliente = document.getElementById('loanClient').value;
-                    const valor = parseFloat(document.getElementById('loanValue').value);
-                    if (!cliente || !valor) return alert('Por favor, preencha o Cliente e o Valor.');
-
-                    const loan = {
-                        id: Date.now(),
-                        cliente,
-                        valor,
+                    const c = document.getElementById('loanClient').value;
+                    const v = parseFloat(document.getElementById('loanValue').value);
+                    if (!c || !v) return alert('Cliente e Valor são obrigatórios!');
+                    const data = {
+                        cliente: c, valor: v,
                         taxa: parseFloat(document.getElementById('loanRate').value) || 0,
                         prazo: parseInt(document.getElementById('loanDays').value) || 30,
                         whats: document.getElementById('loanWhatsApp').value || '',
-                        status: 'pendente',
                         data: new Date().toLocaleDateString('pt-BR')
                     };
-                    app.state.loans.push(loan);
-                    localStorage.setItem('ec_loans', JSON.stringify(app.state.loans));
-                    
-                    // Limpar campos
-                    document.getElementById('loanClient').value = '';
-                    document.getElementById('loanValue').value = '';
-                    document.getElementById('loanPreview').innerText = 'R$ 0,00';
-                    
-                    alert('Empréstimo cadastrado!');
-                    app.ui.renderLoans();
+                    db.ref('loans').push(data);
+                    db.ref('logs').push({ acao: `Empréstimo: ${c} - R$ ${v}`, data: new Date().toLocaleString() });
+                    alert('Cadastrado com sucesso!');
+                    ['loanClient', 'loanValue', 'loanRate', 'loanDays', 'loanWhatsApp'].forEach(id => document.getElementById(id).value = '');
                 }
+            },
+
+            users: {
+                add: () => {
+                    const n = document.getElementById('newUserName').value;
+                    const e = document.getElementById('newUserEmail').value;
+                    const p = document.getElementById('newUserPass').value;
+                    const r = document.getElementById('newUserRole').value;
+                    if (!n || !e || !p) return alert('Preencha todos os dados!');
+                    db.ref('users').push({ nome: n, email: e, pass: p, role: r });
+                    ['newUserName', 'newUserEmail', 'newUserPass'].forEach(id => document.getElementById(id).value = '');
+                },
+                remove: (id) => confirm('Excluir este usuário?') && db.ref('users/' + id).remove()
             },
 
             ui: {
                 init: () => {
-                    // Preenche dados do usuário logado na UI
-                    const initial = app.state.user.nome.charAt(0).toUpperCase();
                     document.getElementById('userName').innerText = app.state.user.nome;
                     document.getElementById('userRole').innerText = app.state.user.role === 'admin' ? 'Administrador' : 'Operador';
-                    document.getElementById('userInitialNav').innerText = initial;
-                    document.getElementById('userInitialHeader').innerText = initial;
-
-                    // Mostra seção de ADM se tiver permissão
-                    if (app.state.user.role === 'admin') {
-                        document.getElementById('adminMenuSection').classList.remove('hidden');
-                    } else {
-                        document.getElementById('adminMenuSection').classList.add('hidden');
-                    }
-
-                    // Força a aba inicial
+                    if (app.state.user.role === 'admin') document.getElementById('adminMenuSection').classList.remove('hidden');
                     app.ui.switchTab('emprestimos', true);
                 },
-                
-                // LÓGICA DO MENU RETRÁTIL MÓVEL
                 toggleMenu: () => {
-                    const sidebar = document.getElementById('mobileSidebar');
-                    const overlay = document.getElementById('sidebarOverlay');
-                    sidebar.classList.toggle('open');
-                    overlay.classList.toggle('show');
+                    document.getElementById('mobileSidebar').classList.toggle('open');
+                    document.getElementById('sidebarOverlay').classList.toggle('show');
                 },
-
-                switchTab: (tabId, isInit = false) => {
-                    // 1. Fecha o menu (se não for inicialização)
-                    if (!isInit) app.ui.toggleMenu();
-
-                    // 2. Esconde todas as abas e remove classes ativas dos botões
+                switchTab: (id, init = false) => {
+                    if (!init) app.ui.toggleMenu();
                     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('bg-slate-800', 'border-l-4', 'border-blue-400', 'text-white'));
-
-                    // 3. Mostra a aba clicada e atualiza título do header
-                    document.getElementById('content-' + tabId).classList.add('active');
-                    const tabTitle = tabId.charAt(0).toUpperCase() + tabId.slice(1);
-                    document.getElementById('headerTitle').innerText = tabTitle;
-
-                    // 4. Marca o botão do menu como ativo (visual)
-                    // Encontra o botão correspondente
-                    const activeBtn = Array.from(document.querySelectorAll('.nav-link')).find(btn => btn.getAttribute('onclick').includes(`'${tabId}'`));
-                    if(activeBtn) activeBtn.classList.add('bg-slate-800', 'border-l-4', 'border-blue-400', 'text-white');
-
-                    // 5. Renderiza dados específicos da aba
-                    if (tabId === 'emprestimos') app.ui.renderLoans();
-                    if (tabId === 'usuarios' && app.state.user.role === 'admin') app.ui.renderUsers();
+                    document.getElementById('content-' + id).classList.add('active');
+                    document.getElementById('headerTitle').innerText = id.charAt(0).toUpperCase() + id.slice(1);
                 },
-
                 renderLoans: () => {
-                    const container = document.getElementById('loanListMobile');
-                    if (app.state.loans.length === 0) {
-                        container.innerHTML = '<p class="text-center p-8 text-slate-400 italic bg-white rounded-lg border">Nenhum empréstimo cadastrado.</p>';
-                        return;
-                    }
-
-                    // Renderiza em formato de CARDS para mobile (conforme imagem enviada)
-                    container.innerHTML = app.state.loans.reverse().map(l => {
-                        const total = app.loans.calculateTotal(l.valor, l.taxa, l.prazo);
-                        const statusColor = l.status === 'pendente' ? 'text-amber-600 bg-amber-100' : 'text-emerald-600 bg-emerald-100';
-                        return `
-                            <div class="bg-white p-5 rounded-xl border border-slate-100 shadow-sm space-y-3">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <p class="text-xs text-slate-400 font-medium">Cliente</p>
-                                        <p class="font-bold text-slate-900 text-lg">${l.cliente}</p>
-                                        <p class="text-xs text-slate-500">${l.data}</p>
-                                    </div>
-                                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${statusColor}">
-                                        ${l.status}
-                                    </span>
-                                </div>
-                                <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
-                                    <div>
-                                        <p class="text-xs text-slate-400">Valor Original</p>
-                                        <p class="font-semibold text-slate-700">R$ ${l.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-slate-400">Total c/ Juros</p>
-                                        <p class="font-bold text-blue-700">R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
-                                    </div>
-                                </div>
-                                <div class="flex gap-2 pt-3 border-t border-slate-100">
-                                    ${l.whats ? `<a href="https://wa.me/${l.whats.replace(/\D/g,'')}" target="_blank" class="flex-1 bg-emerald-100 text-emerald-700 text-center py-2.5 rounded-lg text-sm font-bold active:bg-emerald-200"><i class="fa-brands fa-whatsapp mr-1"></i> Cobrar</a>` : ''}
-                                    <button class="flex-1 bg-blue-100 text-blue-700 py-2.5 rounded-lg text-sm font-bold active:bg-blue-200">✅ Receber</button>
-                                </div>
+                    const cont = document.getElementById('loanListMobile');
+                    cont.innerHTML = app.state.loans.slice().reverse().map(l => `
+                        <div class="bg-white p-5 rounded-xl border shadow-sm space-y-3">
+                            <div class="flex justify-between items-start">
+                                <div><p class="font-bold text-lg text-slate-900">${l.cliente}</p><p class="text-xs text-slate-500">${l.data}</p></div>
+                                <button onclick="db.ref('loans/${l.id}').remove()" class="text-slate-300 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>
                             </div>
-                        `;
-                    }).join('');
+                            <div class="grid grid-cols-2 gap-3 pt-2 border-t text-sm">
+                                <div><p class="text-slate-400">Empréstimo</p><p class="font-bold text-slate-700">R$ ${l.valor.toLocaleString('pt-BR')}</p></div>
+                                <div><p class="text-slate-400">Total Retorno</p><p class="font-bold text-blue-700">R$ ${app.loans.calculateTotal(l.valor, l.taxa, l.prazo).toLocaleString('pt-BR')}</p></div>
+                            </div>
+                            <div class="flex gap-2">
+                                ${l.whats ? `<a href="https://wa.me/${l.whats.replace(/\D/g,'')}" target="_blank" class="flex-1 bg-emerald-100 text-emerald-700 text-center py-2.5 rounded-lg font-bold">WhatsApp</a>` : ''}
+                                <button class="flex-1 bg-blue-100 text-blue-700 py-2.5 rounded-lg font-bold">✅ Recebido</button>
+                            </div>
+                        </div>`).join('');
                 },
-
                 renderUsers: () => {
-                    if (app.state.user.role !== 'admin') return;
                     const body = document.getElementById('userTableBody');
-                    
-                    // Mostra usuários cadastrados (LocalStorage)
                     body.innerHTML = app.state.sysUsers.map(u => `
-                        <tr class="hover:bg-slate-50">
-                            <td class="p-4">
-                                <p class="font-semibold text-slate-800">${u.nome}</p>
-                                <p class="text-xs text-slate-500 font-mono">${u.email}</p>
-                            </td>
-                            <td class="p-4">
-                                <span class="px-2.5 py-1 rounded-full text-xs font-bold ${u.role === 'admin' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'}">
-                                    ${u.role.toUpperCase()}
-                                </span>
-                            </td>
-                            <td class="p-4 text-right">
-                                <button onclick="app.users.remove(${u.id})" class="text-slate-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `).join('');
-
-                    // Adiciona linha informativa sobre o ADM padrão (que não pode ser deletado)
-                    body.innerHTML += `
-                        <tr class="bg-yellow-50/50">
-                            <td class="p-4">
-                                <p class="font-semibold text-amber-900">Criador/Adm Padrão</p>
-                                <p class="text-xs text-amber-700 font-mono">${ADMIN_DEFAULT.email}</p>
-                            </td>
-                            <td class="p-4">
-                                <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">CRIADOR</span>
-                            </td>
-                            <td class="p-4 text-right text-xs text-amber-600 italic">Protegido</td>
-                        </tr>
-                    `;
+                        <tr><td class="p-4"><p class="font-bold">${u.nome}</p><p class="text-xs">${u.email}</p></td>
+                        <td class="p-4"><span class="px-2 py-1 bg-slate-100 rounded text-xs font-bold text-slate-600">${u.role.toUpperCase()}</span></td>
+                        <td class="p-4 text-right"><button onclick="app.users.remove('${u.id}')" class="text-red-400"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('');
+                },
+                renderLogs: () => {
+                    const list = document.getElementById('historicoList');
+                    list.innerHTML = app.state.logs.map(log => `
+                        <div class="p-3 bg-white border rounded-lg text-sm shadow-sm">
+                            <b class="text-slate-700">${log.acao}</b><br>
+                            <span class="text-xs text-slate-400">${log.data}</span>
+                        </div>`).join('');
                 }
             }
         };
