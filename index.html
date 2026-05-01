@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ECBusiness - Gestão Completa</title>
+    <title>Ecbusiness - Gestão Completa</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
@@ -15,96 +18,117 @@
         .tab-content.active { display: block; }
         #mobileSidebar { transition: transform 0.3s ease-in-out; transform: translateX(-100%); }
         #mobileSidebar.open { transform: translateX(0); }
+        .profile-img { object-fit: cover; width: 100%; height: 100%; border-radius: 50%; }
+        #sidebarOverlay { display: none; }
+        #sidebarOverlay.show { display: block; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-200">
+
+    <div id="sidebarOverlay" onclick="app.ui.toggleMenu(false)" class="fixed inset-0 bg-black/50 z-40"></div>
+
+    <input type="file" id="profileInput" accept="image/*" class="hidden" onchange="app.users.uploadPhoto(this)">
 
     <div id="loginPage" class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm border">
-            <h1 class="text-2xl font-bold text-blue-600 mb-6 text-center">EC Business</h1>
-            <input type="email" id="loginEmail" class="w-full p-3 mb-3 border rounded-lg" placeholder="E-mail">
-            <input type="password" id="loginPass" class="w-full p-3 mb-4 border rounded-lg" placeholder="Senha">
+        <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl w-full max-w-sm border dark:border-slate-800">
+            <h1 class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-6 text-center">Ecbusiness</h1>
+            <input type="email" id="loginEmail" class="w-full p-3 mb-3 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" placeholder="E-mail">
+            <input type="password" id="loginPass" class="w-full p-3 mb-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" placeholder="Senha">
             <div class="flex items-center gap-2 mb-6">
                 <input type="checkbox" id="rememberMe" class="w-4 h-4 text-blue-600 rounded">
-                <label for="rememberMe" class="text-sm text-slate-600">Lembrar meus dados</label>
+                <label for="rememberMe" class="text-sm text-slate-600 dark:text-slate-400">Lembrar meus dados</label>
             </div>
-            <button onclick="app.auth.login()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold">Entrar</button>
+            <button onclick="app.auth.login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold">Entrar</button>
         </div>
     </div>
 
     <div id="dashboard" class="hidden flex flex-col min-h-screen">
-        <header class="bg-white p-4 flex justify-between items-center shadow-sm sticky top-0 z-30">
-            <button onclick="document.getElementById('mobileSidebar').classList.add('open')" class="text-xl"><i class="fa-solid fa-bars"></i></button>
-            <h1 class="font-bold text-slate-700" id="headerTitle">Empréstimos</h1>
-            <div id="userBadge" class="w-8 h-8 bg-blue-600 rounded-full text-white flex items-center justify-center font-bold text-sm">U</div>
+        <header class="bg-white dark:bg-slate-900 p-4 flex justify-between items-center shadow-sm sticky top-0 z-30 border-b dark:border-slate-800">
+            <button onclick="app.ui.toggleMenu(true)" class="text-xl dark:text-white">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <h1 class="font-bold text-slate-700 dark:text-slate-200" id="headerTitle">Empréstimos</h1>
+            <div class="flex items-center gap-3">
+                <button onclick="toggleDarkMode()" class="text-lg text-slate-500 dark:text-amber-400">
+                    <i id="themeIcon" class="fa-solid fa-moon"></i>
+                </button>
+                <div id="userBadge" onclick="document.getElementById('profileInput').click()" class="w-9 h-9 bg-blue-600 rounded-full text-white flex items-center justify-center font-bold text-sm cursor-pointer overflow-hidden border-2 border-blue-100 dark:border-slate-700">
+                    <span>U</span>
+                </div>
+            </div>
         </header>
 
         <aside id="mobileSidebar" class="fixed inset-y-0 left-0 w-72 bg-slate-900 text-white p-5 z-50">
             <div class="flex justify-between items-center mb-8">
-                <h2 class="text-xl font-bold text-blue-400">EC Business</h2>
-                <button onclick="document.getElementById('mobileSidebar').classList.remove('open')"><i class="fa-solid fa-xmark"></i></button>
+                <h2 class="text-xl font-bold text-blue-400 italic">EC Business</h2>
+                <button onclick="app.ui.toggleMenu(false)"><i class="fa-solid fa-xmark text-xl text-slate-400"></i></button>
             </div>
             <nav class="space-y-4">
-                <button onclick="app.ui.nav('emprestimos')" class="block w-full text-left p-3 hover:bg-slate-800 rounded"><i class="fa-solid fa-hand-holding-dollar mr-3 text-blue-400"></i>Empréstimos</button>
-                <button onclick="app.ui.nav('fornecedores')" class="block w-full text-left p-3 hover:bg-slate-800 rounded"><i class="fa-solid fa-truck mr-3 text-amber-400"></i>Fornecedores</button>
-                <button onclick="app.ui.nav('usuarios')" id="menuUsuarios" class="hidden block w-full text-left p-3 hover:bg-red-900 text-red-300 rounded"><i class="fa-solid fa-users-gear mr-3"></i>Gerenciar Usuários</button>
-                <button onclick="app.ui.nav('historico')" class="block w-full text-left p-3 hover:bg-slate-800 rounded"><i class="fa-solid fa-clock-rotate-left mr-3 text-emerald-400"></i>Histórico</button>
+                <button onclick="app.ui.nav('emprestimos')" class="block w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fa-solid fa-hand-holding-dollar mr-3 text-blue-400"></i>Empréstimos</button>
+                <button onclick="app.ui.nav('fornecedores')" class="block w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fa-solid fa-truck mr-3 text-amber-400"></i>Fornecedores</button>
+                <button onclick="app.ui.nav('usuarios')" id="menuUsuarios" class="hidden block w-full text-left p-3 hover:bg-red-900/30 text-red-400 rounded-lg"><i class="fa-solid fa-users-gear mr-3"></i>Gerenciar Usuários</button>
+                <button onclick="app.ui.nav('alteracoes')" class="block w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fa-solid fa-clock-rotate-left mr-3 text-emerald-400"></i>Alterações</button>
             </nav>
             <button onclick="location.reload()" class="absolute bottom-5 text-red-400 text-sm">Sair do Sistema</button>
         </aside>
 
         <main class="p-4 flex-1">
             <div id="content-emprestimos" class="tab-content active space-y-4">
-                <div class="bg-white p-5 rounded-xl border shadow-sm">
-                    <h3 class="font-bold mb-4 text-blue-700">Novo Empréstimo</h3>
-                    <input type="text" id="loanClient" placeholder="Nome do Cliente" class="w-full p-2 mb-2 border rounded">
+                <div id="alertSection" class="hidden space-y-2 mb-4">
+                    <h2 class="text-[10px] font-black text-red-500 uppercase tracking-widest flex items-center gap-2">
+                        <i class="fa-solid fa-bell animate-pulse"></i> Cobranças Prioritárias
+                    </h2>
+                    <div id="alertList" class="space-y-2"></div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border dark:border-slate-800 shadow-sm">
+                    <h3 class="font-bold mb-4 text-blue-700 dark:text-blue-400">Novo Empréstimo</h3>
+                    <input type="text" id="loanClient" placeholder="Nome Completo do Cliente" class="w-full p-2 mb-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
                     <div class="grid grid-cols-2 gap-2 mb-2">
-                        <input type="number" id="loanValue" placeholder="Valor R$" class="p-2 border rounded" oninput="app.loans.calc()">
-                        <input type="number" id="loanRate" placeholder="Juros %" class="p-2 border rounded" oninput="app.loans.calc()">
+                        <input type="text" id="loanValue" placeholder="Valor R$" class="p-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" oninput="app.utils.maskMoney(this); app.loans.calc()">
+                        <input type="number" id="loanRate" placeholder="Juros %" class="p-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" oninput="app.loans.calc()">
                     </div>
                     <div class="grid grid-cols-2 gap-2 mb-4">
-                        <input type="number" id="loanDays" placeholder="Prazo (Dias)" class="p-2 border rounded">
-                        <input type="text" id="loanWhats" placeholder="WhatsApp" class="p-2 border rounded">
+                        <input type="number" id="loanDays" placeholder="Prazo (Dias)" class="p-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
+                        <input type="text" id="loanWhats" placeholder="WhatsApp" class="p-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" oninput="app.utils.maskPhone(this)">
                     </div>
-                    <div class="bg-blue-50 p-3 rounded mb-4 font-bold text-blue-800">Total: R$ <span id="loanTotal">0,00</span></div>
-                    <button onclick="app.loans.add()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold">Cadastrar</button>
+                    <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg mb-4 flex justify-between items-center font-bold text-blue-700 dark:text-blue-400 text-lg">
+                        <span>Total: R$ <span id="loanTotal">0,00</span></span>
+                    </div>
+                    <button onclick="app.loans.add()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold">Cadastrar</button>
                 </div>
-                <div id="loanList" class="space-y-3 mt-6">
-                    <p class="text-center text-slate-400 py-4">Carregando empréstimos...</p>
-                </div>
+                <div id="loanList" class="space-y-3 mt-6 pb-10"></div>
             </div>
 
             <div id="content-fornecedores" class="tab-content space-y-4">
-                <div class="bg-white p-5 rounded-xl border shadow-sm">
-                    <h3 class="font-bold mb-4 text-amber-600">Novo Fornecedor</h3>
-                    <input type="text" id="supName" placeholder="Nome" class="w-full p-2 mb-2 border rounded">
-                    <input type="text" id="supWhats" placeholder="WhatsApp" class="w-full p-2 mb-2 border rounded">
-                    <input type="text" id="supPix" placeholder="Chave Pix" class="w-full p-2 mb-2 border rounded">
-                    <input type="number" id="supValue" placeholder="Valor Fornecido R$" class="w-full p-2 mb-4 border rounded">
-                    <button onclick="app.suppliers.add()" class="w-full bg-amber-500 text-white py-3 rounded-lg font-bold">Salvar</button>
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border dark:border-slate-800 shadow-sm">
+                    <h3 class="font-bold mb-4 text-amber-600 dark:text-amber-400">Novo Fornecedor</h3>
+                    <input type="text" id="supName" placeholder="Nome da Empresa/Fornecedor" class="w-full p-2 mb-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
+                    <input type="text" id="supWhats" placeholder="WhatsApp" class="w-full p-2 mb-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" oninput="app.utils.maskPhone(this)">
+                    <input type="text" id="supPix" placeholder="Chave Pix" class="w-full p-2 mb-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
+                    <input type="text" id="supValue" placeholder="Valor Fornecido R$" class="w-full p-2 mb-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" oninput="app.utils.maskMoney(this)">
+                    <button onclick="app.suppliers.add()" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold">Salvar</button>
                 </div>
-                <div id="supList" class="space-y-3 mt-6">
-                    <p class="text-center text-slate-400 py-4">Carregando fornecedores...</p>
-                </div>
+                <div id="supList" class="space-y-3 mt-6"></div>
             </div>
 
             <div id="content-usuarios" class="tab-content space-y-4">
-                <div class="bg-white p-5 rounded-xl border shadow-sm">
-                    <h3 class="font-bold mb-4 text-red-600">Adicionar Usuário</h3>
-                    <input type="text" id="newUserName" placeholder="Nome" class="w-full p-2 mb-2 border rounded">
-                    <input type="email" id="newUserEmail" placeholder="E-mail" class="w-full p-2 mb-2 border rounded">
-                    <input type="password" id="newUserPass" placeholder="Senha" class="w-full p-2 mb-2 border rounded">
-                    <select id="newUserRole" class="w-full p-2 mb-4 border rounded">
-                        <option value="comum">Usuário Comum</option>
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border dark:border-slate-800 shadow-sm">
+                    <h3 class="font-bold mb-4 text-red-600">Gestão de Usuários</h3>
+                    <input type="text" id="newUserName" placeholder="Nome Completo" class="w-full p-2 mb-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
+                    <input type="email" id="newUserEmail" placeholder="E-mail" class="w-full p-2 mb-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
+                    <input type="password" id="newUserPass" placeholder="Senha" class="w-full p-2 mb-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
+                    <select id="newUserRole" class="w-full p-2 mb-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
+                        <option value="comum">Comum</option>
                         <option value="admin">Administrador</option>
                     </select>
-                    <button onclick="app.users.add()" class="w-full bg-red-600 text-white py-3 rounded-lg font-bold">Criar Acesso</button>
+                    <button onclick="app.users.add()" class="w-full bg-red-600 text-white py-3 rounded-xl font-bold">Criar Acesso</button>
                 </div>
                 <div id="userList" class="space-y-2"></div>
             </div>
 
-            <div id="content-historico" class="tab-content space-y-2">
-                <h3 class="font-bold text-slate-600 mb-2">Logs de Atividade</h3>
+            <div id="content-alteracoes" class="tab-content space-y-2">
+                <h3 class="font-bold text-slate-500 dark:text-slate-400 text-[10px] uppercase px-2 mb-4">Registro de Alterações e Movimentações</h3>
                 <div id="logList" class="space-y-2"></div>
             </div>
         </main>
@@ -132,7 +156,41 @@
         };
 
         const app = {
-            state: { user: null },
+            state: { user: null, userId: null },
+
+            utils: {
+                isValidName: (name) => {
+                    const trimmed = name.trim();
+                    const regex = /^[A-Za-zÀ-ÖØ-öø-ÿ ]+$/;
+                    const parts = trimmed.split(/\s+/);
+                    if (parts.length < 2) {
+                        alert("Por favor, insira o nome completo.");
+                        return false;
+                    }
+                    if (!regex.test(trimmed)) {
+                        alert("O nome deve conter apenas letras.");
+                        return false;
+                    }
+                    return true;
+                },
+                maskMoney: (i) => {
+                    let v = i.value.replace(/\D/g, "");
+                    v = (v / 100).toFixed(2) + "";
+                    v = v.replace(".", ",");
+                    v = v.replace(/(\d)(\d{3})(\d{3}),/g, "$1.$2.$3,");
+                    v = v.replace(/(\d)(\d{3}),/g, "$1.$2,");
+                    i.value = v;
+                },
+                maskPhone: (i) => {
+                    let v = i.value.replace(/\D/g, "");
+                    if (v.length > 11) v = v.substring(0, 11);
+                    if (v.length > 10) i.value = `(${v.substring(0, 2)}) ${v.substring(2, 3)} ${v.substring(3, 7)}-${v.substring(7, 11)}`;
+                    else if (v.length > 6) i.value = `(${v.substring(0, 2)}) ${v.substring(2, 6)}-${v.substring(6, 10)}`;
+                    else if (v.length > 2) i.value = `(${v.substring(0, 2)}) ${v.substring(2)}`;
+                    else if (v.length > 0) i.value = `(${v}`;
+                },
+                parseValue: (v) => parseFloat(v.replace(/\./g, "").replace(",", ".")) || 0
+            },
 
             auth: {
                 login: () => {
@@ -143,29 +201,51 @@
                         localStorage.setItem('ec_pass', p);
                     }
                     if(e === 'yamadaki1304@gmail.com' && p === 'Lobosdefg-1') {
-                        app.state.user = { nome: 'Admin', role: 'admin' };
+                        app.state.user = { nome: 'Admin Arthur', role: 'admin' };
+                        app.state.userId = 'admin_root';
                         app.ui.init();
                     } else {
                         db.ref('users').once('value', snap => {
-                            let found = null;
-                            snap.forEach(c => { if(c.val().email === e && c.val().pass === p) found = c.val(); });
-                            if(found) { app.state.user = found; app.ui.init(); }
+                            let found = false;
+                            snap.forEach(c => {
+                                if(c.val().email === e && c.val().pass === p) {
+                                    app.state.user = c.val();
+                                    app.state.userId = c.key;
+                                    found = true;
+                                }
+                            });
+                            if(found) { app.ui.init(); app.logs.add("Entrou no sistema"); }
                             else alert('Acesso negado!');
                         });
                     }
                 }
             },
 
+            logs: {
+                add: (msg) => {
+                    if(!app.state.user) return;
+                    db.ref('logs').push({
+                        msg: msg,
+                        user: app.state.user.nome,
+                        data: new Date().toLocaleString('pt-BR'),
+                        ts: Date.now()
+                    });
+                }
+            },
+
             loans: {
                 calc: () => {
-                    const v = parseFloat(document.getElementById('loanValue').value) || 0;
+                    const v = app.utils.parseValue(document.getElementById('loanValue').value);
                     const r = parseFloat(document.getElementById('loanRate').value) || 0;
                     const total = v + (v * (r / 100));
                     document.getElementById('loanTotal').innerText = total.toLocaleString('pt-BR', {minimumFractionDigits: 2});
                 },
                 add: () => {
+                    const clientName = document.getElementById('loanClient').value;
+                    if(!app.utils.isValidName(clientName)) return;
+
                     const data = {
-                        cliente: document.getElementById('loanClient').value,
+                        cliente: clientName.trim(),
                         valor: document.getElementById('loanValue').value,
                         taxa: document.getElementById('loanRate').value,
                         prazo: document.getElementById('loanDays').value,
@@ -174,50 +254,57 @@
                         dataCriacao: Date.now(),
                         status: 'pendente'
                     };
-                    if(!data.cliente || !data.valor) return alert("Preencha os dados do cliente!");
+                    if(!data.valor) return alert("Preencha o valor!");
                     
                     db.ref('loans').push(data);
-                    db.ref('logs').push({
-                        msg: `Novo Empréstimo: ${data.cliente} - R$ ${data.total}`,
-                        user: app.state.user.nome,
-                        data: new Date().toLocaleString()
-                    });
-                    
-                    alert('Empréstimo salvo!');
-                    document.getElementById('loanClient').value = '';
-                    document.getElementById('loanValue').value = '';
-                    document.getElementById('loanRate').value = '';
-                    document.getElementById('loanDays').value = '';
-                    document.getElementById('loanWhats').value = '';
+                    app.logs.add(`CADASTROU empréstimo: ${data.cliente} (R$ ${data.total})`);
+                    document.querySelectorAll('#content-emprestimos input').forEach(i => i.value = '');
                     document.getElementById('loanTotal').innerText = '0,00';
-                },
-                markPaid: (id) => {
-                    db.ref('loans/' + id).update({ status: 'pago' });
                 }
             },
 
             suppliers: {
                 add: () => {
+                    const sName = document.getElementById('supName').value;
                     const data = {
-                        nome: document.getElementById('supName').value,
-                        whats: document.getElementById('supWhats').value,
+                        nome: sName.trim(),
+                        valor: document.getElementById('supValue').value,
                         pix: document.getElementById('supPix').value,
-                        valor: document.getElementById('supValue').value
+                        whats: document.getElementById('supWhats').value
                     };
-                    if(!data.nome) return alert("Informe o nome do fornecedor!");
-                    
+                    if(data.nome.length < 3) return alert("Nome inválido!");
                     db.ref('suppliers').push(data);
-                    db.ref('logs').push({
-                        msg: `Novo Fornecedor: ${data.nome} - Valor: R$ ${data.valor}`,
-                        user: app.state.user.nome,
-                        data: new Date().toLocaleString()
+                    app.logs.add(`ADICIONOU fornecedor: ${data.nome}`);
+                    document.querySelectorAll('#content-fornecedores input').forEach(i => i.value = '');
+                }
+            },
+
+            users: {
+                add: () => {
+                    const n = document.getElementById('newUserName').value;
+                    if(!app.utils.isValidName(n)) return;
+                    const r = document.getElementById('newUserRole').value;
+                    db.ref('users').push({ 
+                        nome: n.trim(), 
+                        email: document.getElementById('newUserEmail').value, 
+                        pass: document.getElementById('newUserPass').value, 
+                        role: r 
                     });
-                    
-                    alert('Fornecedor salvo!');
-                    document.getElementById('supName').value = '';
-                    document.getElementById('supWhats').value = '';
-                    document.getElementById('supPix').value = '';
-                    document.getElementById('supValue').value = '';
+                    app.logs.add(`CRIOU acesso: ${n} (${r})`);
+                    document.querySelectorAll('#content-usuarios input').forEach(i => i.value = '');
+                },
+                uploadPhoto: (input) => {
+                    const file = input.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = e.target.result;
+                        if(app.state.userId === 'admin_root') localStorage.setItem('admin_photo', img);
+                        else db.ref('users/' + app.state.userId).update({ photo: img });
+                        app.ui.updateBadge(img);
+                        app.logs.add("Alterou foto de perfil");
+                    };
+                    reader.readAsDataURL(file);
                 }
             },
 
@@ -225,125 +312,123 @@
                 init: () => {
                     document.getElementById('loginPage').classList.add('hidden');
                     document.getElementById('dashboard').classList.remove('hidden');
-                    document.getElementById('userBadge').innerText = app.state.user.nome.charAt(0);
+                    const savedPhoto = (app.state.userId === 'admin_root') ? localStorage.getItem('admin_photo') : app.state.user.photo;
+                    app.ui.updateBadge(savedPhoto);
+                    // Apenas usuários fica restrito ao ADM. Alterações (Histórico) fica livre.
                     if(app.state.user.role === 'admin') document.getElementById('menuUsuarios').classList.remove('hidden');
                     app.ui.sync();
+                },
+                toggleMenu: (open) => {
+                    const menu = document.getElementById('mobileSidebar');
+                    const overlay = document.getElementById('sidebarOverlay');
+                    if(open) { menu.classList.add('open'); overlay.classList.add('show'); }
+                    else { menu.classList.remove('open'); overlay.classList.remove('show'); }
+                },
+                updateBadge: (img) => {
+                    const b = document.getElementById('userBadge');
+                    if(img) b.innerHTML = `<img src="${img}" class="profile-img">`;
+                    else b.innerHTML = `<span>${app.state.user.nome.charAt(0)}</span>`;
                 },
                 nav: (id) => {
                     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
                     document.getElementById('content-' + id).classList.add('active');
-                    document.getElementById('headerTitle').innerText = id.charAt(0).toUpperCase() + id.slice(1);
-                    document.getElementById('mobileSidebar').classList.remove('open');
+                    // Tradução visual para o título
+                    const titles = { 'emprestimos': 'Empréstimos', 'fornecedores': 'Fornecedores', 'usuarios': 'Usuários', 'alteracoes': 'Alterações' };
+                    document.getElementById('headerTitle').innerText = titles[id] || id;
+                    app.ui.toggleMenu(false);
                 },
                 sync: () => {
-                    // Sincronizar Empréstimos
+                    // Sincronismo de Empréstimos
                     db.ref('loans').on('value', snap => {
-                        const now = Date.now();
-                        let html = '';
+                        let html = ''; let htmlAlerts = '';
+                        const now = new Date(); now.setHours(0,0,0,0);
                         snap.forEach(c => {
                             const l = c.val();
-                            const id = c.key;
-                            const created = l.dataCriacao || now;
-                            const dueDate = created + (parseInt(l.prazo || 0) * 86400000);
-                            const diff = dueDate - now;
-                            const daysLeft = Math.ceil(diff / 86400000);
-                            
-                            let status = l.status || 'pendente';
-                            if(status !== 'pago' && diff < 0) status = 'vencido';
+                            const dVenc = new Date(l.dataCriacao); dVenc.setDate(dVenc.getDate() + parseInt(l.prazo || 0)); dVenc.setHours(0,0,0,0);
+                            const diff = Math.ceil((dVenc - now) / (1000 * 60 * 60 * 24));
+                            let st = l.status || 'pendente'; if(st !== 'pago' && diff < 0) st = 'vencido';
 
-                            // Notificação Android Bridge (2 dias antes)
-                            if(status === 'pendente' && daysLeft === 2 && window.Android && window.Android.notify) {
-                                window.Android.notify("Aviso EC Business", `O empréstimo de ${l.cliente} vence em 2 dias!`);
-                            }
-
-                            const color = status === 'pago' ? 'bg-emerald-100 border-emerald-300' : (status === 'vencido' ? 'bg-red-100 border-red-300' : 'bg-blue-50 border-blue-200');
-                            const textColor = status === 'pago' ? 'text-emerald-700' : (status === 'vencido' ? 'text-red-700' : 'text-blue-700');
-
-                            html += `
-                            <div class="${color} p-4 rounded-lg border shadow-sm">
-                                <div class="flex justify-between items-center mb-1">
-                                    <p class="font-bold text-lg text-slate-800">${l.cliente}</p>
-                                    <span class="text-xs font-bold uppercase px-2 py-1 rounded bg-white border ${textColor}">${status}</span>
-                                </div>
-                                <p class="text-sm text-slate-600">Total: <span class="font-bold text-slate-800">R$ ${l.total}</span> | Prazo: ${l.prazo} dias</p>
-                                <div class="flex gap-2 mt-3">
-                                    ${status !== 'pago' ? `<button onclick="app.loans.markPaid('${id}')" class="flex-1 bg-emerald-600 text-white py-2 rounded-lg text-sm font-bold shadow-sm">Marcar Pago</button>` : ''}
-                                    <button onclick="if(confirm('Excluir?')) db.ref('loans/${id}').remove()" class="bg-white text-red-500 border border-red-200 px-4 rounded-lg text-sm"><i class="fa-solid fa-trash"></i></button>
+                            const card = `
+                            <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border dark:border-slate-800 shadow-sm mb-3">
+                                <p class="font-bold dark:text-white text-sm">${l.cliente} <span class="text-[9px] float-right uppercase px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 font-black">${st}</span></p>
+                                <p class="text-[10px] text-slate-500 mt-1">Vence: ${dVenc.toLocaleDateString('pt-BR')} | Total: R$ ${l.total}</p>
+                                <div class="flex gap-2 mt-4">
+                                    ${st !== 'pago' ? `
+                                        <button onclick="db.ref('loans/${c.key}').update({status:'pago'}); app.logs.add('PAGAMENTO de: ${l.cliente}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg text-xs font-bold">Baixa</button>
+                                        <a href="https://wa.me/${(l.whats || '').replace(/\D/g,'')}" onclick="app.logs.add('COBRANÇA enviada para: ${l.cliente}')" target="_blank" class="flex-1 bg-green-500 text-white text-center py-2 rounded-lg text-xs font-bold">Cobrar</a>
+                                    ` : ''}
+                                    <button onclick="if(confirm('Excluir?')){db.ref('loans/${c.key}').remove(); app.logs.add('EXCLUIU empréstimo de: ${l.cliente}')}" class="px-3 border dark:border-slate-700 rounded-lg text-red-400"><i class="fa-solid fa-trash-can"></i></button>
                                 </div>
                             </div>`;
+                            html += card;
+                            if(st !== 'pago' && diff <= 2) htmlAlerts += card;
                         });
-                        document.getElementById('loanList').innerHTML = html || '<p class="text-center text-slate-400 text-sm py-4">Nenhum empréstimo para acompanhar.</p>';
+                        document.getElementById('loanList').innerHTML = html || '<p class="text-center text-slate-400 py-10 text-xs">Vazio.</p>';
+                        if(htmlAlerts) { document.getElementById('alertSection').classList.remove('hidden'); document.getElementById('alertList').innerHTML = htmlAlerts; }
+                        else document.getElementById('alertSection').classList.add('hidden');
                     });
 
-                    // Sincronizar Fornecedores
+                    // Sincronismo de Alterações (Antigo Histórico)
+                    db.ref('logs').orderByChild('ts').limitToLast(50).on('value', snap => {
+                        let logs = []; snap.forEach(c => logs.push(c.val()));
+                        document.getElementById('logList').innerHTML = logs.reverse().map(log => `
+                            <div class="p-3 bg-white dark:bg-slate-900 border-l-4 ${log.msg.includes('EXCLUIU') ? 'border-red-500' : 'border-emerald-500'} rounded-lg shadow-sm mb-2">
+                                <p class="font-bold dark:text-slate-200 text-[11px] leading-tight">${log.msg}</p>
+                                <div class="flex justify-between items-center mt-2 text-slate-500 font-semibold text-[9px] uppercase tracking-tighter">
+                                    <span><i class="fa-solid fa-user mr-1"></i> ${log.user}</span>
+                                    <span><i class="fa-solid fa-clock mr-1"></i> ${log.data}</span>
+                                </div>
+                            </div>
+                        `).join('') || '<p class="text-center text-slate-400 py-10 text-xs">Sem alterações registradas.</p>';
+                    });
+
+                    // Fornecedores
                     db.ref('suppliers').on('value', snap => {
                         let html = '';
                         snap.forEach(c => {
                             const i = c.val();
-                            html += `
-                            <div class="bg-white p-4 border rounded-xl shadow-sm">
-                                <div class="flex justify-between items-start mb-2">
-                                    <div>
-                                        <p class="font-bold text-slate-800">${i.nome}</p>
-                                        <p class="text-xs text-slate-500">Fornecido: <span class="font-bold text-amber-600">R$ ${i.valor || '0,00'}</span></p>
-                                    </div>
-                                    <button onclick="if(confirm('Excluir fornecedor?')) db.ref('suppliers/${c.key}').remove()" class="text-slate-300 hover:text-red-500"><i class="fa-solid fa-circle-xmark"></i></button>
+                            html += `<div class="bg-white dark:bg-slate-900 p-4 border dark:border-slate-800 rounded-xl shadow-sm">
+                                <div class="flex justify-between mb-2">
+                                    <p class="font-bold dark:text-white text-sm">${i.nome}</p>
+                                    <button onclick="if(confirm('Excluir?')){db.ref('suppliers/${c.key}').remove(); app.logs.add('EXCLUIU fornecedor: ${i.nome}')}" class="text-red-400"><i class="fa-solid fa-trash-can"></i></button>
                                 </div>
-                                <div class="space-y-1">
-                                    <p class="text-sm text-blue-600 font-medium"><i class="fa-brands fa-whatsapp mr-1"></i>${i.whats}</p>
-                                    <p class="text-xs break-all bg-slate-50 p-2 rounded border border-dashed font-mono">Pix: ${i.pix}</p>
+                                <p class="text-xs text-amber-600 font-black mb-4">R$ ${i.valor}</p>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button onclick="navigator.clipboard.writeText('${i.pix}'); alert('Pix Copiado!'); app.logs.add('COPIOU PIX de: ${i.nome}')" class="bg-slate-100 dark:bg-slate-800 dark:text-slate-300 p-2 rounded-lg text-[10px] font-bold">Pix</button>
+                                    <a href="https://wa.me/${(i.whats || '').replace(/\D/g,'')}" onclick="app.logs.add('CONTATOU fornecedor: ${i.nome}')" target="_blank" class="bg-green-500 text-white p-2 rounded-lg text-center text-[10px] font-bold">WhatsApp</a>
                                 </div>
                             </div>`;
                         });
-                        document.getElementById('supList').innerHTML = html || '<p class="text-center text-slate-400 text-sm py-4">Nenhum fornecedor na lista.</p>';
+                        document.getElementById('supList').innerHTML = html;
                     });
 
-                    // Sincronizar Histórico (Logs)
-                    db.ref('logs').limitToLast(30).on('value', snap => {
-                        let html = '';
-                        const logs = [];
-                        snap.forEach(c => logs.push(c.val()));
-                        logs.reverse().forEach(log => {
-                            html += `
-                            <div class="bg-white p-3 border-l-4 border-emerald-500 rounded shadow-xs mb-2">
-                                <p class="text-sm font-medium text-slate-800">${log.msg}</p>
-                                <div class="flex justify-between text-[10px] text-slate-400 mt-2 italic">
-                                    <span>Resp: ${log.user}</span>
-                                    <span>${log.data}</span>
-                                </div>
-                            </div>`;
-                        });
-                        document.getElementById('logList').innerHTML = html || '<p class="text-center text-slate-400 text-sm py-4">Nenhuma atividade registrada.</p>';
-                    });
-
-                    // Lista de Usuários (Admin)
+                    // Lista de Usuários
                     db.ref('users').on('value', snap => {
                         let html = '';
                         snap.forEach(c => {
                             const u = c.val();
-                            html += `<div class="bg-white p-3 border rounded-lg flex justify-between items-center shadow-sm">
-                                <span class="font-medium text-slate-700">${u.nome} <small class="text-slate-400">(${u.role})</small></span>
-                                <button onclick="db.ref('users/${c.key}').remove()" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-trash-can"></i></button>
+                            html += `<div class="bg-white dark:bg-slate-900 p-3 border dark:border-slate-800 rounded-lg flex justify-between items-center mb-2 shadow-sm">
+                                <span class="text-sm dark:text-slate-300 font-bold">${u.nome} <small>(${u.role})</small></span>
+                                <button onclick="if(confirm('Remover?')){db.ref('users/${c.key}').remove(); app.logs.add('REMOVEU USUÁRIO: ${u.nome}')}" class="text-red-400"><i class="fa-solid fa-trash-can"></i></button>
                             </div>`;
                         });
                         document.getElementById('userList').innerHTML = html;
                     });
                 }
-            },
-
-            users: { add: () => { 
-                const n = document.getElementById('newUserName').value;
-                const e = document.getElementById('newUserEmail').value;
-                const p = document.getElementById('newUserPass').value;
-                const r = document.getElementById('newUserRole').value;
-                if(!n || !e || !p) return alert("Preencha todos os campos do usuário!");
-                db.ref('users').push({ nome: n, email: e, pass: p, role: r }); 
-                alert('Acesso criado!');
-                document.getElementById('newUserName').value = '';
-                document.getElementById('newUserEmail').value = '';
-                document.getElementById('newUserPass').value = '';
-            } }
+            }
         };
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            html.classList.toggle('dark');
+            const isDark = html.classList.contains('dark');
+            document.getElementById('themeIcon').className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+        if (localStorage.getItem('theme') === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.getElementById('themeIcon').className = 'fa-solid fa-sun';
+        }
     </script>
 </body>
 </html>
