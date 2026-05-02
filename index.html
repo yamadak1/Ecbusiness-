@@ -27,12 +27,32 @@
 
     <div id="sidebarOverlay" onclick="app.ui.toggleMenu(false)" class="fixed inset-0 bg-black/50 z-40"></div>
 
+    <div id="whatsappModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-xl w-full max-w-md border dark:border-slate-800 shadow-2xl">
+            <h3 class="font-bold mb-3 text-green-600 dark:text-green-500 flex items-center gap-2">
+                <i class="fa-brands fa-whatsapp text-xl"></i> Enviar Mensagem
+            </h3>
+            <div class="mb-3">
+                <label class="text-xs text-slate-500 dark:text-slate-400 font-bold mb-1 block">Número de Telefone</label>
+                <input type="text" id="modalWhatsPhone" class="w-full p-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg bg-slate-100" readonly>
+            </div>
+            <div class="mb-4">
+                <label class="text-xs text-slate-500 dark:text-slate-400 font-bold mb-1 block">Mensagem (Você pode editar)</label>
+                <textarea id="modalWhatsMsg" rows="5" class="w-full p-3 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"></textarea>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('whatsappModal').classList.add('hidden')" class="flex-1 p-3 bg-slate-200 dark:bg-slate-800 rounded-lg font-bold text-slate-700 dark:text-slate-300">Cancelar</button>
+                <button onclick="app.ui.sendWhatsAppDirect()" class="flex-1 p-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold">Enviar</button>
+            </div>
+        </div>
+    </div>
+
     <input type="file" id="profileInput" accept="image/*" class="hidden" onchange="app.users.uploadPhoto(this)">
 
     <div id="loginPage" class="flex items-center justify-center min-h-screen p-4">
         <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl w-full max-w-sm border dark:border-slate-800">
             <h1 class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-6 text-center">Ecbusiness</h1>
-            <input type="email" id="loginEmail" class="w-full p-3 mb-3 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" placeholder="E-mail">
+            <input type="text" id="loginUser" class="w-full p-3 mb-3 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" placeholder="Nome de Usuário">
             <input type="password" id="loginPass" class="w-full p-3 mb-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" placeholder="Senha">
             <div class="flex items-center gap-2 mb-6">
                 <input type="checkbox" id="rememberMe" class="w-4 h-4 text-blue-600 rounded">
@@ -68,6 +88,7 @@
                 <button onclick="app.ui.nav('fornecedores')" class="block w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fa-solid fa-truck mr-3 text-amber-400"></i>Fornecedores</button>
                 <button onclick="app.ui.nav('usuarios')" id="menuUsuarios" class="hidden block w-full text-left p-3 hover:bg-red-900/30 text-red-400 rounded-lg"><i class="fa-solid fa-users-gear mr-3"></i>Gerenciar Usuários</button>
                 <button onclick="app.ui.nav('alteracoes')" class="block w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fa-solid fa-clock-rotate-left mr-3 text-emerald-400"></i>Alterações</button>
+                <button onclick="app.ui.nav('backup')" id="menuBackup" class="hidden block w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fa-solid fa-database mr-3 text-cyan-400"></i>Backup do Sistema</button>
             </nav>
             <button onclick="location.reload()" class="absolute bottom-5 text-red-400 text-sm">Sair do Sistema</button>
         </aside>
@@ -82,7 +103,7 @@
                 </div>
 
                 <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border dark:border-slate-800 shadow-sm">
-                    <h3 class="font-bold mb-4 text-blue-700 dark:text-blue-400">Novo Empréstimo</h3>
+                    <h3 id="loanFormTitle" class="font-bold mb-4 text-blue-700 dark:text-blue-400">Novo Empréstimo</h3>
                     <input type="text" id="loanClient" placeholder="Nome Completo do Cliente" class="w-full p-2 mb-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
                     <div class="grid grid-cols-2 gap-2 mb-2">
                         <input type="text" id="loanValue" placeholder="Valor R$" class="p-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" oninput="app.utils.maskMoney(this); app.loans.calc()">
@@ -95,19 +116,19 @@
                     <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg mb-4 flex justify-between items-center font-bold text-blue-700 dark:text-blue-400 text-lg">
                         <span>Total: R$ <span id="loanTotal">0,00</span></span>
                     </div>
-                    <button onclick="app.loans.add()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold">Cadastrar</button>
+                    <button id="btnSubmitLoan" onclick="app.loans.add()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold">Cadastrar</button>
                 </div>
                 <div id="loanList" class="space-y-3 mt-6 pb-10"></div>
             </div>
 
             <div id="content-fornecedores" class="tab-content space-y-4">
                 <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border dark:border-slate-800 shadow-sm">
-                    <h3 class="font-bold mb-4 text-amber-600 dark:text-amber-400">Novo Fornecedor</h3>
+                    <h3 id="supFormTitle" class="font-bold mb-4 text-amber-600 dark:text-amber-400">Novo Fornecedor</h3>
                     <input type="text" id="supName" placeholder="Nome da Empresa/Fornecedor" class="w-full p-2 mb-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
                     <input type="text" id="supWhats" placeholder="WhatsApp" class="w-full p-2 mb-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" oninput="app.utils.maskPhone(this)">
                     <input type="text" id="supPix" placeholder="Chave Pix" class="w-full p-2 mb-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
                     <input type="text" id="supValue" placeholder="Valor Fornecido R$" class="w-full p-2 mb-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" oninput="app.utils.maskMoney(this)">
-                    <button onclick="app.suppliers.add()" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold">Salvar</button>
+                    <button id="btnSubmitSup" onclick="app.suppliers.add()" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold">Salvar</button>
                 </div>
                 <div id="supList" class="space-y-3 mt-6"></div>
             </div>
@@ -115,9 +136,8 @@
             <div id="content-usuarios" class="tab-content space-y-4">
                 <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border dark:border-slate-800 shadow-sm">
                     <h3 class="font-bold mb-4 text-red-600">Gestão de Usuários</h3>
-                    <input type="text" id="newUserName" placeholder="Nome Completo" class="w-full p-2 mb-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
-                    <input type="email" id="newUserEmail" placeholder="E-mail" class="w-full p-2 mb-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
-                    <input type="password" id="newUserPass" placeholder="Senha" class="w-full p-2 mb-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
+                    <input type="text" id="newUserName" placeholder="Nome para Acesso" class="w-full p-2 mb-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
+                    <input type="password" id="newUserPass" placeholder="Senha de Acesso" class="w-full p-2 mb-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
                     <select id="newUserRole" class="w-full p-2 mb-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
                         <option value="comum">Comum</option>
                         <option value="admin">Administrador</option>
@@ -128,8 +148,19 @@
             </div>
 
             <div id="content-alteracoes" class="tab-content space-y-2">
-                <h3 class="font-bold text-slate-500 dark:text-slate-400 text-[10px] uppercase px-2 mb-4">Registro de Alterações e Movimentações</h3>
+                <div id="adminLogControls" class="hidden flex gap-2 mb-4">
+                    <button onclick="app.logs.clear()" class="w-full bg-red-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase"><i class="fa-solid fa-trash mr-2"></i>Limpar Histórico</button>
+                </div>
+                <h3 class="font-bold text-slate-500 dark:text-slate-400 text-[10px] uppercase px-2 mb-4 tracking-widest">Assinatura de Alterações e Movimentações</h3>
                 <div id="logList" class="space-y-2"></div>
+            </div>
+
+            <div id="content-backup" class="tab-content space-y-4">
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border dark:border-slate-800 shadow-sm">
+                    <h3 class="font-bold mb-2 text-cyan-600 dark:text-cyan-400">Backup Completo do Sistema</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Esta função baixa um arquivo contendo todos os dados registrados no seu banco de dados (Empréstimos, Fornecedores, Usuários e Histórico).</p>
+                    <button onclick="app.utils.generateBackup()" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"><i class="fa-solid fa-file-export"></i> Baixar Arquivo de Backup</button>
+                </div>
             </div>
         </main>
     </div>
@@ -148,30 +179,20 @@
         const db = firebase.database();
 
         window.onload = () => {
-            if(localStorage.getItem('ec_email')) {
-                document.getElementById('loginEmail').value = localStorage.getItem('ec_email');
+            if(localStorage.getItem('ec_user')) {
+                document.getElementById('loginUser').value = localStorage.getItem('ec_user');
                 document.getElementById('loginPass').value = localStorage.getItem('ec_pass');
                 document.getElementById('rememberMe').checked = true;
             }
         };
 
         const app = {
-            state: { user: null, userId: null },
+            state: { user: null, userId: null, editingLoanKey: null, editingSupKey: null },
 
             utils: {
                 isValidName: (name) => {
                     const trimmed = name.trim();
-                    const regex = /^[A-Za-zÀ-ÖØ-öø-ÿ ]+$/;
-                    const parts = trimmed.split(/\s+/);
-                    if (parts.length < 2) {
-                        alert("Por favor, insira o nome completo.");
-                        return false;
-                    }
-                    if (!regex.test(trimmed)) {
-                        alert("O nome deve conter apenas letras.");
-                        return false;
-                    }
-                    return true;
+                    return trimmed.length >= 2;
                 },
                 maskMoney: (i) => {
                     let v = i.value.replace(/\D/g, "");
@@ -189,35 +210,58 @@
                     else if (v.length > 2) i.value = `(${v.substring(0, 2)}) ${v.substring(2)}`;
                     else if (v.length > 0) i.value = `(${v}`;
                 },
-                parseValue: (v) => parseFloat(v.replace(/\./g, "").replace(",", ".")) || 0
+                parseValue: (v) => parseFloat(v.replace(/\./g, "").replace(",", ".")) || 0,
+                formatToWhatsAppNumber: (phone) => {
+                    let cleaned = phone.replace(/\D/g, '');
+                    if (cleaned.length === 0) return '';
+                    if (cleaned.length <= 11) return '55' + cleaned;
+                    return cleaned;
+                },
+                generateBackup: () => {
+                    db.ref('/').once('value', snap => {
+                        const data = JSON.stringify(snap.val(), null, 2);
+                        const blob = new Blob([data], {type: 'application/json'});
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `backup_ecbusiness_${new Date().toISOString().slice(0,10)}.json`;
+                        a.click();
+                        app.logs.add("GEROU BACKUP do sistema");
+                    });
+                }
             },
 
             auth: {
                 login: () => {
-                    const e = document.getElementById('loginEmail').value;
+                    const u = document.getElementById('loginUser').value.trim();
                     const p = document.getElementById('loginPass').value;
+                    
                     if(document.getElementById('rememberMe').checked) {
-                        localStorage.setItem('ec_email', e);
+                        localStorage.setItem('ec_user', u);
                         localStorage.setItem('ec_pass', p);
                     }
-                    if(e === 'yamadaki1304@gmail.com' && p === 'Lobosdefg-1') {
-                        app.state.user = { nome: 'Admin Arthur', role: 'admin' };
+
+                    if(u.toLowerCase() === 'yamadaki' && p === 'Teddy13@4') {
+                        app.state.user = { nome: 'yamadaki', role: 'admin' };
                         app.state.userId = 'admin_root';
                         app.ui.init();
-                    } else {
-                        db.ref('users').once('value', snap => {
-                            let found = false;
-                            snap.forEach(c => {
-                                if(c.val().email === e && c.val().pass === p) {
-                                    app.state.user = c.val();
-                                    app.state.userId = c.key;
-                                    found = true;
-                                }
-                            });
-                            if(found) { app.ui.init(); app.logs.add("Entrou no sistema"); }
-                            else alert('Acesso negado!');
-                        });
+                        app.logs.add("Entrou no sistema");
+                        return;
                     }
+
+                    db.ref('users').once('value', snap => {
+                        let found = false;
+                        snap.forEach(c => {
+                            const userDB = c.val();
+                            if(userDB.nome.toLowerCase() === u.toLowerCase() && userDB.pass === p) {
+                                app.state.user = userDB;
+                                app.state.userId = c.key;
+                                found = true;
+                            }
+                        });
+                        if(found) { app.ui.init(); app.logs.add("Entrou no sistema"); }
+                        else alert('Usuário ou senha incorretos!');
+                    });
                 }
             },
 
@@ -227,9 +271,16 @@
                     db.ref('logs').push({
                         msg: msg,
                         user: app.state.user.nome,
-                        data: new Date().toLocaleString('pt-BR'),
+                        data: new Date().toLocaleDateString('pt-BR'),
+                        hora: new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
                         ts: Date.now()
                     });
+                },
+                clear: () => {
+                    if(confirm("Tem certeza que deseja apagar TODO o histórico? Esta ação não pode ser desfeita.")) {
+                        db.ref('logs').remove();
+                        alert("Histórico removido.");
+                    }
                 }
             },
 
@@ -240,57 +291,86 @@
                     const total = v + (v * (r / 100));
                     document.getElementById('loanTotal').innerText = total.toLocaleString('pt-BR', {minimumFractionDigits: 2});
                 },
+                loadEdit: (key) => {
+                    db.ref('loans/' + key).once('value', snap => {
+                        const l = snap.val();
+                        app.state.editingLoanKey = key;
+                        document.getElementById('loanClient').value = l.cliente;
+                        document.getElementById('loanValue').value = l.valor;
+                        document.getElementById('loanRate').value = l.taxa || '';
+                        document.getElementById('loanDays').value = l.prazo || '';
+                        document.getElementById('loanWhats').value = l.whats || '';
+                        app.loans.calc();
+                        document.getElementById('loanFormTitle').innerText = "Editar Empréstimo";
+                        document.getElementById('btnSubmitLoan').innerText = "Atualizar Cadastro";
+                    });
+                },
                 add: () => {
                     const clientName = document.getElementById('loanClient').value;
-                    if(!app.utils.isValidName(clientName)) return;
-
                     const data = {
                         cliente: clientName.trim(),
                         valor: document.getElementById('loanValue').value,
                         taxa: document.getElementById('loanRate').value,
                         prazo: document.getElementById('loanDays').value,
                         whats: document.getElementById('loanWhats').value,
-                        total: document.getElementById('loanTotal').innerText,
-                        dataCriacao: Date.now(),
-                        status: 'pendente'
+                        total: document.getElementById('loanTotal').innerText
                     };
-                    if(!data.valor) return alert("Preencha o valor!");
-                    
-                    db.ref('loans').push(data);
-                    app.logs.add(`CADASTROU empréstimo: ${data.cliente} (R$ ${data.total})`);
+                    if (app.state.editingLoanKey) {
+                        db.ref('loans/' + app.state.editingLoanKey).update(data);
+                        app.logs.add(`ATUALIZOU empréstimo: ${data.cliente}`);
+                        app.state.editingLoanKey = null;
+                        document.getElementById('loanFormTitle').innerText = "Novo Empréstimo";
+                        document.getElementById('btnSubmitLoan').innerText = "Cadastrar";
+                    } else {
+                        data.dataCriacao = Date.now();
+                        data.status = 'pendente';
+                        db.ref('loans').push(data);
+                        app.logs.add(`CADASTROU empréstimo: ${data.cliente}`);
+                    }
                     document.querySelectorAll('#content-emprestimos input').forEach(i => i.value = '');
                     document.getElementById('loanTotal').innerText = '0,00';
                 }
             },
 
             suppliers: {
+                loadEdit: (key) => {
+                    db.ref('suppliers/' + key).once('value', snap => {
+                        const i = snap.val();
+                        app.state.editingSupKey = key;
+                        document.getElementById('supName').value = i.nome;
+                        document.getElementById('supWhats').value = i.whats || '';
+                        document.getElementById('supPix').value = i.pix || '';
+                        document.getElementById('supValue').value = i.valor || '';
+                        document.getElementById('supFormTitle').innerText = "Editar Fornecedor";
+                        document.getElementById('btnSubmitSup').innerText = "Atualizar Cadastro";
+                    });
+                },
                 add: () => {
-                    const sName = document.getElementById('supName').value;
                     const data = {
-                        nome: sName.trim(),
+                        nome: document.getElementById('supName').value.trim(),
                         valor: document.getElementById('supValue').value,
                         pix: document.getElementById('supPix').value,
                         whats: document.getElementById('supWhats').value
                     };
-                    if(data.nome.length < 3) return alert("Nome inválido!");
-                    db.ref('suppliers').push(data);
-                    app.logs.add(`ADICIONOU fornecedor: ${data.nome}`);
+                    if (app.state.editingSupKey) {
+                        db.ref('suppliers/' + app.state.editingSupKey).update(data);
+                        app.logs.add(`ATUALIZOU fornecedor: ${data.nome}`);
+                        app.state.editingSupKey = null;
+                    } else {
+                        db.ref('suppliers').push(data);
+                        app.logs.add(`ADICIONOU fornecedor: ${data.nome}`);
+                    }
                     document.querySelectorAll('#content-fornecedores input').forEach(i => i.value = '');
                 }
             },
 
             users: {
                 add: () => {
-                    const n = document.getElementById('newUserName').value;
-                    if(!app.utils.isValidName(n)) return;
+                    const n = document.getElementById('newUserName').value.trim();
+                    const p = document.getElementById('newUserPass').value;
                     const r = document.getElementById('newUserRole').value;
-                    db.ref('users').push({ 
-                        nome: n.trim(), 
-                        email: document.getElementById('newUserEmail').value, 
-                        pass: document.getElementById('newUserPass').value, 
-                        role: r 
-                    });
-                    app.logs.add(`CRIOU acesso: ${n} (${r})`);
+                    db.ref('users').push({ nome: n, pass: p, role: r });
+                    app.logs.add(`CRIOU USUÁRIO: ${n}`);
                     document.querySelectorAll('#content-usuarios input').forEach(i => i.value = '');
                 },
                 uploadPhoto: (input) => {
@@ -314,8 +394,11 @@
                     document.getElementById('dashboard').classList.remove('hidden');
                     const savedPhoto = (app.state.userId === 'admin_root') ? localStorage.getItem('admin_photo') : app.state.user.photo;
                     app.ui.updateBadge(savedPhoto);
-                    // Apenas usuários fica restrito ao ADM. Alterações (Histórico) fica livre.
-                    if(app.state.user.role === 'admin') document.getElementById('menuUsuarios').classList.remove('hidden');
+                    if(app.state.user.role === 'admin') {
+                        document.getElementById('menuUsuarios').classList.remove('hidden');
+                        document.getElementById('adminLogControls').classList.remove('hidden');
+                        document.getElementById('menuBackup').classList.remove('hidden');
+                    }
                     app.ui.sync();
                 },
                 toggleMenu: (open) => {
@@ -332,83 +415,95 @@
                 nav: (id) => {
                     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
                     document.getElementById('content-' + id).classList.add('active');
-                    // Tradução visual para o título
-                    const titles = { 'emprestimos': 'Empréstimos', 'fornecedores': 'Fornecedores', 'usuarios': 'Usuários', 'alteracoes': 'Alterações' };
+                    const titles = { 'emprestimos': 'Empréstimos', 'fornecedores': 'Fornecedores', 'usuarios': 'Usuários', 'alteracoes': 'Alterações', 'backup': 'Backup do Sistema' };
                     document.getElementById('headerTitle').innerText = titles[id] || id;
                     app.ui.toggleMenu(false);
                 },
+                openWhatsAppModal: (phone, text) => {
+                    document.getElementById('modalWhatsPhone').value = phone || '';
+                    document.getElementById('modalWhatsMsg').value = text || '';
+                    document.getElementById('whatsappModal').classList.remove('hidden');
+                },
+                sendWhatsAppDirect: () => {
+                    const phoneInput = document.getElementById('modalWhatsPhone').value;
+                    const cleanPhone = app.utils.formatToWhatsAppNumber(phoneInput);
+                    const msg = document.getElementById('modalWhatsMsg').value;
+                    if (!cleanPhone) return alert("Número inválido.");
+                    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+                    document.getElementById('whatsappModal').classList.add('hidden');
+                },
                 sync: () => {
-                    // Sincronismo de Empréstimos
                     db.ref('loans').on('value', snap => {
-                        let html = ''; let htmlAlerts = '';
-                        const now = new Date(); now.setHours(0,0,0,0);
+                        let html = '';
+                        const now = new Date().setHours(0,0,0,0);
                         snap.forEach(c => {
                             const l = c.val();
-                            const dVenc = new Date(l.dataCriacao); dVenc.setDate(dVenc.getDate() + parseInt(l.prazo || 0)); dVenc.setHours(0,0,0,0);
+                            const dVenc = new Date(l.dataCriacao); dVenc.setDate(dVenc.getDate() + parseInt(l.prazo || 0));
                             const diff = Math.ceil((dVenc - now) / (1000 * 60 * 60 * 24));
                             let st = l.status || 'pendente'; if(st !== 'pago' && diff < 0) st = 'vencido';
-
-                            const card = `
+                            html += `
                             <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border dark:border-slate-800 shadow-sm mb-3">
                                 <p class="font-bold dark:text-white text-sm">${l.cliente} <span class="text-[9px] float-right uppercase px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 font-black">${st}</span></p>
                                 <p class="text-[10px] text-slate-500 mt-1">Vence: ${dVenc.toLocaleDateString('pt-BR')} | Total: R$ ${l.total}</p>
                                 <div class="flex gap-2 mt-4">
                                     ${st !== 'pago' ? `
-                                        <button onclick="db.ref('loans/${c.key}').update({status:'pago'}); app.logs.add('PAGAMENTO de: ${l.cliente}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg text-xs font-bold">Baixa</button>
-                                        <a href="https://wa.me/${(l.whats || '').replace(/\D/g,'')}" onclick="app.logs.add('COBRANÇA enviada para: ${l.cliente}')" target="_blank" class="flex-1 bg-green-500 text-white text-center py-2 rounded-lg text-xs font-bold">Cobrar</a>
+                                        <button onclick="db.ref('loans/${c.key}').update({status:'pago'}); app.logs.add('BAIXA no empréstimo: ${l.cliente}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg text-xs font-bold">Baixa</button>
+                                        <button onclick="app.ui.openWhatsAppModal('${l.whats || ''}', 'Olá ${l.cliente}, lembrete do valor R$ ${l.total}.')" class="flex-1 bg-green-500 text-white py-2 rounded-lg text-xs font-bold">Cobrar</button>
                                     ` : ''}
-                                    <button onclick="if(confirm('Excluir?')){db.ref('loans/${c.key}').remove(); app.logs.add('EXCLUIU empréstimo de: ${l.cliente}')}" class="px-3 border dark:border-slate-700 rounded-lg text-red-400"><i class="fa-solid fa-trash-can"></i></button>
+                                    <button onclick="app.loans.loadEdit('${c.key}')" class="px-3 border dark:border-slate-700 rounded-lg text-amber-500"><i class="fa-solid fa-pen"></i></button>
+                                    <button onclick="if(confirm('Excluir?')){db.ref('loans/${c.key}').remove(); app.logs.add('EXCLUIU empréstimo: ${l.cliente}')}" class="px-3 border dark:border-slate-700 rounded-lg text-red-400"><i class="fa-solid fa-trash-can"></i></button>
                                 </div>
                             </div>`;
-                            html += card;
-                            if(st !== 'pago' && diff <= 2) htmlAlerts += card;
                         });
-                        document.getElementById('loanList').innerHTML = html || '<p class="text-center text-slate-400 py-10 text-xs">Vazio.</p>';
-                        if(htmlAlerts) { document.getElementById('alertSection').classList.remove('hidden'); document.getElementById('alertList').innerHTML = htmlAlerts; }
-                        else document.getElementById('alertSection').classList.add('hidden');
+                        document.getElementById('loanList').innerHTML = html;
                     });
 
-                    // Sincronismo de Alterações (Antigo Histórico)
-                    db.ref('logs').orderByChild('ts').limitToLast(50).on('value', snap => {
-                        let logs = []; snap.forEach(c => logs.push(c.val()));
-                        document.getElementById('logList').innerHTML = logs.reverse().map(log => `
-                            <div class="p-3 bg-white dark:bg-slate-900 border-l-4 ${log.msg.includes('EXCLUIU') ? 'border-red-500' : 'border-emerald-500'} rounded-lg shadow-sm mb-2">
-                                <p class="font-bold dark:text-slate-200 text-[11px] leading-tight">${log.msg}</p>
-                                <div class="flex justify-between items-center mt-2 text-slate-500 font-semibold text-[9px] uppercase tracking-tighter">
-                                    <span><i class="fa-solid fa-user mr-1"></i> ${log.user}</span>
-                                    <span><i class="fa-solid fa-clock mr-1"></i> ${log.data}</span>
+                    db.ref('logs').on('value', snap => {
+                        let logs = [];
+                        if (snap.exists()) {
+                            snap.forEach(c => { logs.push(c.val()); });
+                            document.getElementById('logList').innerHTML = logs.reverse().map(log => `
+                                <div class="p-3 bg-white dark:bg-slate-900 border-l-4 ${log.msg.includes('EXCLUIU') ? 'border-red-500' : 'border-emerald-500'} rounded-lg shadow-sm mb-2">
+                                    <p class="font-bold dark:text-slate-200 text-[11px] mb-2">${log.msg}</p>
+                                    <div class="flex justify-between items-center text-slate-500 font-bold text-[9px] uppercase tracking-tighter bg-slate-50 dark:bg-slate-800/50 p-1 rounded">
+                                        <span><i class="fa-solid fa-pen-nib mr-1"></i> Por: ${log.user}</span>
+                                        <span><i class="fa-solid fa-calendar-day mr-1"></i> ${log.data} às ${log.hora}</span>
+                                    </div>
                                 </div>
-                            </div>
-                        `).join('') || '<p class="text-center text-slate-400 py-10 text-xs">Sem alterações registradas.</p>';
+                            `).join('');
+                        } else {
+                            document.getElementById('logList').innerHTML = '';
+                        }
                     });
 
-                    // Fornecedores
                     db.ref('suppliers').on('value', snap => {
                         let html = '';
                         snap.forEach(c => {
                             const i = c.val();
-                            html += `<div class="bg-white dark:bg-slate-900 p-4 border dark:border-slate-800 rounded-xl shadow-sm">
+                            html += `<div class="bg-white dark:bg-slate-900 p-4 border dark:border-slate-800 rounded-xl shadow-sm mb-3">
                                 <div class="flex justify-between mb-2">
                                     <p class="font-bold dark:text-white text-sm">${i.nome}</p>
-                                    <button onclick="if(confirm('Excluir?')){db.ref('suppliers/${c.key}').remove(); app.logs.add('EXCLUIU fornecedor: ${i.nome}')}" class="text-red-400"><i class="fa-solid fa-trash-can"></i></button>
+                                    <div class="flex gap-2">
+                                        <button onclick="app.suppliers.loadEdit('${c.key}')" class="text-amber-500"><i class="fa-solid fa-pen"></i></button>
+                                        <button onclick="if(confirm('Excluir?')){db.ref('suppliers/${c.key}').remove(); app.logs.add('EXCLUIU fornecedor: ${i.nome}')}" class="text-red-400"><i class="fa-solid fa-trash-can"></i></button>
+                                    </div>
                                 </div>
                                 <p class="text-xs text-amber-600 font-black mb-4">R$ ${i.valor}</p>
                                 <div class="grid grid-cols-2 gap-2">
-                                    <button onclick="navigator.clipboard.writeText('${i.pix}'); alert('Pix Copiado!'); app.logs.add('COPIOU PIX de: ${i.nome}')" class="bg-slate-100 dark:bg-slate-800 dark:text-slate-300 p-2 rounded-lg text-[10px] font-bold">Pix</button>
-                                    <a href="https://wa.me/${(i.whats || '').replace(/\D/g,'')}" onclick="app.logs.add('CONTATOU fornecedor: ${i.nome}')" target="_blank" class="bg-green-500 text-white p-2 rounded-lg text-center text-[10px] font-bold">WhatsApp</a>
+                                    <button onclick="navigator.clipboard.writeText('${i.pix}'); alert('Pix Copiado!')" class="bg-slate-100 dark:bg-slate-800 p-2 rounded-lg text-[10px] font-bold">Copiar Pix</button>
+                                    <button onclick="app.ui.openWhatsAppModal('${i.whats || ''}', 'Olá ${i.nome}')" class="bg-green-500 text-white p-2 rounded-lg text-[10px] font-bold">WhatsApp</button>
                                 </div>
                             </div>`;
                         });
                         document.getElementById('supList').innerHTML = html;
                     });
 
-                    // Lista de Usuários
                     db.ref('users').on('value', snap => {
                         let html = '';
                         snap.forEach(c => {
                             const u = c.val();
                             html += `<div class="bg-white dark:bg-slate-900 p-3 border dark:border-slate-800 rounded-lg flex justify-between items-center mb-2 shadow-sm">
-                                <span class="text-sm dark:text-slate-300 font-bold">${u.nome} <small>(${u.role})</small></span>
+                                <span class="text-sm dark:text-slate-300 font-bold">${u.nome} <small class="text-blue-500">(${u.role})</small></span>
                                 <button onclick="if(confirm('Remover?')){db.ref('users/${c.key}').remove(); app.logs.add('REMOVEU USUÁRIO: ${u.nome}')}" class="text-red-400"><i class="fa-solid fa-trash-can"></i></button>
                             </div>`;
                         });
