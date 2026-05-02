@@ -3,1490 +3,956 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ecbusiness - Gestão de Empréstimos e Clientes</title>
-    
+    <title>Ecbusiness - Gestão Completa</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = { 
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        darkBg: '#020617',
-                        darkCard: '#0f172a'
-                    }
-                }
-            }
-        }
+        tailwind.config = { darkMode: 'class' }
     </script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script>
-        window.OneSignal = window.OneSignal || [];
-        OneSignal.push(function() {
-            OneSignal.init({
-                appId: "0274f2ad-af30-48fb-b39d-096045a791b0",
-            });
-        });
-    </script>
-
     <style>
-        .tab-content { display: none; transition: opacity 0.3s ease; }
+        .tab-content { display: none; }
         .tab-content.active { display: block; }
-        
-        #mobileSidebar { 
-            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
-            transform: translateX(-100%); 
-        }
+        #mobileSidebar { transition: transform 0.3s ease-in-out; transform: translateX(-100%); }
         #mobileSidebar.open { transform: translateX(0); }
-        
-        .profile-img { 
-            object-fit: cover; 
-            width: 100%; 
-            height: 100%; 
-            border-radius: 50%; 
-        }
-
-        #sidebarOverlay, #passwordOverlay, #editOverlay, #whatsappOverlay { 
-            display: none; 
-            backdrop-filter: blur(4px);
-        }
-        #sidebarOverlay.show, #passwordOverlay.show, #editOverlay.show, #whatsappOverlay.show { display: block; }
-
-        .dark ::-webkit-scrollbar { width: 5px; }
-        .dark ::-webkit-scrollbar-track { background: #0f172a; }
-        .dark ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-
-        input:focus, textarea:focus, select:focus { border-color: #3b82f6 !important; }
-        
-        .card-entry {
-            animation: slideUp 0.3s ease-out;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .pulse-alert {
-            box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7);
-            animation: pulse-yellow 2s infinite;
-        }
-
-        @keyframes pulse-yellow {
-            0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
-        }
+        .profile-img { object-fit: cover; width: 100%; height: 100%; border-radius: 50%; }
+        #sidebarOverlay { display: none; }
+        #sidebarOverlay.show { display: block; }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-darkBg min-h-screen transition-colors duration-300 font-sans">
+<body class="bg-slate-50 dark:bg-slate-950 min-h-screen transition-colors duration-200">
 
-    <div id="passwordOverlay" class="fixed inset-0 bg-slate-950/80 z-[100] flex items-center justify-center p-6">
-        <div class="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-2xl w-full max-w-sm border dark:border-slate-800 text-center">
-            <div class="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl">
-                <i class="fa-solid fa-shield-halved"></i>
+    <div id="sidebarOverlay" onclick="app.ui.toggleMenu(false)" class="fixed inset-0 bg-black/50 z-40"></div>
+
+    <div id="whatsappModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-xl w-full max-w-md border dark:border-slate-800 shadow-2xl">
+            <h3 class="font-bold mb-3 text-green-600 dark:text-green-500 flex items-center gap-2">
+                <i class="fa-brands fa-whatsapp text-xl"></i> Enviar Mensagem
+            </h3>
+            <div class="mb-3">
+                <label class="text-xs text-slate-500 dark:text-slate-400 font-bold mb-1 block">Número de Telefone</label>
+                <input type="text" id="modalWhatsPhone" class="w-full p-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg bg-slate-100" readonly>
             </div>
-            <h2 class="text-2xl font-bold dark:text-white mb-2">Nova Senha Exigida</h2>
-            <p class="text-slate-500 dark:text-slate-400 text-sm mb-6 leading-relaxed">Este é seu primeiro acesso. Para sua segurança, defina uma nova senha pessoal agora antes de continuar a utilizar o painel administrativo.</p>
-            <div class="space-y-4 text-left">
-                <input type="password" id="newPassRequired" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none" placeholder="Digite sua nova senha">
-                <input type="password" id="newPassConfirm" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none" placeholder="Confirme sua nova senha">
-                <button onclick="app.auth.updateRequiredPassword()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black shadow-lg">ATUALIZAR E ACESSAR</button>
+            <div class="mb-4">
+                <label class="text-xs text-slate-500 dark:text-slate-400 font-bold mb-1 block">Mensagem (Você pode editar)</label>
+                <textarea id="modalWhatsMsg" rows="5" class="w-full p-3 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"></textarea>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('whatsappModal').classList.add('hidden')" class="flex-1 p-3 bg-slate-200 dark:bg-slate-800 rounded-lg font-bold text-slate-700 dark:text-slate-300">Cancelar</button>
+                <button onclick="app.ui.sendWhatsAppDirect()" class="flex-1 p-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-bold">Enviar</button>
             </div>
         </div>
     </div>
 
-    <div id="editOverlay" class="fixed inset-0 bg-slate-950/80 z-[110] flex items-center justify-center p-6">
-        <div class="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-2xl w-full max-w-md border dark:border-slate-800">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold dark:text-white" id="editModalTitle">Editar Registro</h2>
-                <button onclick="document.getElementById('editOverlay').classList.remove('show')" class="text-slate-400 hover:text-red-500 transition-colors p-2"><i class="fa-solid fa-xmark"></i></button>
+    <div id="renewInterestModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-xl w-full max-w-md border dark:border-slate-800 shadow-2xl">
+            <h3 class="font-bold mb-3 text-purple-600 dark:text-purple-400 flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-xl"></i> Renovar Juros
+            </h3>
+            <input type="hidden" id="modalRenewKey">
+            <div class="mb-3">
+                <label class="text-xs text-slate-500 dark:text-slate-400 font-bold mb-1 block">Valor do Juro Pago (R$)</label>
+                <input type="text" id="modalRenewInterestValue" class="w-full p-3 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg font-bold text-lg bg-slate-50 dark:bg-slate-800/50" readonly>
             </div>
-            <div id="editFormFields" class="space-y-4"></div>
-            <button id="btnSaveEdit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black shadow-lg mt-6 transition-all">SALVAR ALTERAÇÕES</button>
-        </div>
-    </div>
-
-    <div id="whatsappOverlay" class="fixed inset-0 bg-slate-950/80 z-[120] flex items-center justify-center p-6">
-        <div class="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-2xl w-full max-w-md border dark:border-slate-800">
-            <div class="flex items-center gap-3 mb-6">
-                <div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-2xl flex items-center justify-center">
-                    <i class="fa-brands fa-whatsapp text-2xl"></i>
-                </div>
-                <div>
-                    <h2 class="text-xl font-bold dark:text-white">Revisar Cobrança</h2>
-                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Edite o texto antes de enviar</p>
-                </div>
+            <div class="mb-4">
+                <label class="text-xs text-slate-500 dark:text-slate-400 font-bold mb-1 block">Novo Prazo para o Empréstimo (Dias)</label>
+                <input type="number" id="modalRenewDays" placeholder="Ex: 30" class="w-full p-3 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 font-bold">
             </div>
-            <textarea id="waMessageArea" rows="6" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none resize-none font-medium leading-relaxed"></textarea>
-            <div class="flex gap-3 mt-6">
-                <button onclick="document.getElementById('whatsappOverlay').classList.remove('show')" class="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors py-4 rounded-2xl font-bold">CANCELAR</button>
-                <button id="btnSendWa" class="flex-[2] bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-black shadow-lg shadow-emerald-500/20 transition-all">ENVIAR AGORA</button>
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('renewInterestModal').classList.add('hidden')" class="flex-1 p-3 bg-slate-200 dark:bg-slate-800 rounded-lg font-bold text-slate-700 dark:text-slate-300">Cancelar</button>
+                <button onclick="app.loans.confirmRenewInterest()" class="flex-1 p-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold">Confirmar</button>
             </div>
         </div>
     </div>
 
-    <div id="sidebarOverlay" onclick="app.ui.toggleMenu(false)" class="fixed inset-0 bg-black/60 z-40 transition-opacity"></div>
+    <div id="changePasswordModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl w-full max-w-sm border dark:border-slate-800 shadow-2xl">
+            <h3 class="font-bold text-lg text-blue-600 dark:text-blue-400 mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-key"></i> Primeiro Acesso
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                Por motivos de segurança, você precisa alterar a sua senha inicial para continuar acessando o sistema.
+            </p>
+            <div class="mb-3">
+                <label class="text-xs text-slate-500 dark:text-slate-400 font-bold mb-1 block">Nova Senha</label>
+                <input type="password" id="modalNewPassInput" placeholder="Sua nova senha" class="w-full p-3 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="mb-4">
+                <label class="text-xs text-slate-500 dark:text-slate-400 font-bold mb-1 block">Confirme a Nova Senha</label>
+                <input type="password" id="modalConfirmPassInput" placeholder="Repita a nova senha" class="w-full p-3 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <button onclick="app.auth.updateFirstPassword()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold">Salvar e Entrar</button>
+        </div>
+    </div>
+
     <input type="file" id="profileInput" accept="image/*" class="hidden" onchange="app.users.uploadPhoto(this)">
 
-    <div id="loginPage" class="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-slate-50 to-slate-200 dark:from-darkBg dark:to-slate-900 transition-all duration-500">
-        <div class="bg-white dark:bg-darkCard p-8 rounded-[2.5rem] shadow-2xl w-full max-w-md border dark:border-slate-800 relative overflow-hidden">
-            <div class="text-center mb-10">
-                <h1 class="text-3xl font-black text-blue-600 dark:text-blue-400 tracking-tighter uppercase">EC BUSINESS</h1>
-                <p class="text-slate-400 text-xs font-bold uppercase mt-1 tracking-widest">Sistema de Gestão de Crédito</p>
+    <div id="loginPage" class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl w-full max-w-sm border dark:border-slate-800">
+            <h1 class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-6 text-center">Ecbusiness</h1>
+            <input type="text" id="loginUser" class="w-full p-3 mb-3 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" placeholder="Nome de Usuário">
+            <input type="password" id="loginPass" class="w-full p-3 mb-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" placeholder="Senha">
+            <div class="flex items-center gap-2 mb-6">
+                <input type="checkbox" id="rememberMe" class="w-4 h-4 text-blue-600 rounded">
+                <label for="rememberMe" class="text-sm text-slate-600 dark:text-slate-400">Lembrar meus dados</label>
             </div>
-            <div class="space-y-5">
-                <div>
-                    <label class="text-xs font-black uppercase text-slate-400 tracking-wider ml-1 mb-2 block">Usuário</label>
-                    <input type="text" id="loginUser" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none" placeholder="Informe o usuário">
-                </div>
-                <div>
-                    <label class="text-xs font-black uppercase text-slate-400 tracking-wider ml-1 mb-2 block">Senha</label>
-                    <div class="relative">
-                        <input type="password" id="loginPass" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none pr-12" placeholder="Digite a senha">
-                        <button type="button" onclick="toggleLoginPassword()" class="absolute inset-y-0 right-0 px-4 flex items-center text-slate-400 hover:text-blue-500 transition-colors">
-                            <i id="eyeIcon" class="fa-solid fa-eye text-lg"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="flex items-center justify-between px-1 py-2">
-                    <div class="flex items-center gap-3">
-                        <input type="checkbox" id="rememberMe" class="w-5 h-5 text-blue-600 rounded-lg border-slate-300">
-                        <label for="rememberMe" class="text-sm text-slate-600 dark:text-slate-400 font-bold select-none cursor-pointer">Lembrar credenciais</label>
-                    </div>
-                </div>
-                <button onclick="app.auth.login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-2xl font-black shadow-xl tracking-wider">ENTRAR NO SISTEMA</button>
-            </div>
+            <button onclick="app.auth.login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold">Entrar</button>
         </div>
     </div>
 
     <div id="dashboard" class="hidden flex flex-col min-h-screen">
-        <header class="bg-white/80 dark:bg-darkCard/80 backdrop-blur-md p-4 flex justify-between items-center shadow-sm sticky top-0 z-30 border-b dark:border-slate-800">
-            <div class="flex items-center gap-4">
-                <button onclick="app.ui.toggleMenu(true)" class="text-xl dark:text-white p-2"><i class="fa-solid fa-bars-staggered"></i></button>
-                <h1 class="font-black text-slate-700 dark:text-slate-200 tracking-tight text-xl" id="headerTitle">Painel de Empréstimos</h1>
-            </div>
-            <div class="flex items-center gap-4">
-                <button onclick="toggleDarkMode()" class="text-lg text-slate-500 dark:text-amber-400 w-10 h-10 flex items-center justify-center rounded-xl border dark:border-slate-700 transition-all duration-300">
+        <header class="bg-white dark:bg-slate-900 p-4 flex justify-between items-center shadow-sm sticky top-0 z-30 border-b dark:border-slate-800">
+            <button onclick="app.ui.toggleMenu(true)" class="text-xl dark:text-white">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <h1 class="font-bold text-slate-700 dark:text-slate-200" id="headerTitle">Empréstimos</h1>
+            <div class="flex items-center gap-3">
+                <button onclick="toggleDarkMode()" class="text-lg text-slate-500 dark:text-amber-400">
                     <i id="themeIcon" class="fa-solid fa-moon"></i>
                 </button>
-                <div id="userBadge" onclick="document.getElementById('profileInput').click()" class="w-10 h-10 bg-blue-600 rounded-2xl text-white flex items-center justify-center font-black text-sm cursor-pointer overflow-hidden border-2 border-white dark:border-slate-800 shadow-lg select-none hover:opacity-80 transition-all">U</div>
+                <div id="userBadge" onclick="document.getElementById('profileInput').click()" class="w-9 h-9 bg-blue-600 rounded-full text-white flex items-center justify-center font-bold text-sm cursor-pointer overflow-hidden border-2 border-blue-100 dark:border-slate-700">
+                    <span>U</span>
+                </div>
             </div>
         </header>
 
-        <aside id="mobileSidebar" class="fixed inset-y-0 left-0 w-80 bg-slate-900 text-white p-6 z-50 shadow-2xl flex flex-col select-none">
-            <div class="flex justify-between items-center mb-10">
-                <h2 class="text-2xl font-black text-blue-400 italic">EC BUSINESS</h2>
-                <button onclick="app.ui.toggleMenu(false)" class="text-slate-500 text-2xl hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        <aside id="mobileSidebar" class="fixed inset-y-0 left-0 w-72 bg-slate-900 text-white p-5 z-50">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-xl font-bold text-blue-400 italic">Ecbusiness</h2>
+                <button onclick="app.ui.toggleMenu(false)"><i class="fa-solid fa-xmark text-xl text-slate-400"></i></button>
             </div>
-            <nav class="space-y-3 flex-1">
-                <button onclick="app.ui.nav('emprestimos')" class="flex items-center w-full p-4 hover:bg-blue-600/10 rounded-2xl transition-all group">
-                    <i class="fa-solid fa-hand-holding-dollar text-blue-400 mr-4 w-6 text-xl"></i> 
-                    <span class="font-bold">Empréstimos</span>
-                </button>
-                <button onclick="app.ui.nav('acompanhamento')" class="flex items-center w-full p-4 hover:bg-indigo-600/10 rounded-2xl transition-all group">
-                    <i class="fa-solid fa-chart-line text-indigo-400 mr-4 w-6 text-xl"></i> 
-                    <span class="font-bold">Acompanhamento</span>
-                </button>
-                <button onclick="app.ui.nav('fornecedores')" class="flex items-center w-full p-4 hover:bg-amber-600/10 rounded-2xl transition-all group">
-                    <i class="fa-solid fa-truck-ramp-box text-amber-400 mr-4 w-6 text-xl"></i> 
-                    <span class="font-bold">Fornecedores</span>
-                </button>
-                <button onclick="app.ui.nav('usuarios')" id="menuUsuarios" class="hidden flex items-center w-full p-4 hover:bg-red-600/10 rounded-2xl transition-all group">
-                    <i class="fa-solid fa-users-gear text-red-400 mr-4 w-6 text-xl"></i> 
-                    <span class="font-bold">Equipe</span>
-                </button>
-                <button onclick="app.ui.nav('alteracoes')" class="flex items-center w-full p-4 hover:bg-emerald-600/10 rounded-2xl transition-all group">
-                    <i class="fa-solid fa-clipboard-list text-emerald-400 mr-4 w-6 text-xl"></i> 
-                    <span class="font-bold">Histórico</span>
-                </button>
-                <button onclick="app.ui.nav('gestao-dados')" class="flex items-center w-full p-4 hover:bg-purple-600/10 rounded-2xl transition-all group">
-                    <i class="fa-solid fa-database text-purple-400 mr-4 w-6 text-xl"></i> 
-                    <span class="font-bold">Dados & Backup</span>
-                </button>
-                <button onclick="app.ui.nav('suporte')" class="flex items-center w-full p-4 hover:bg-sky-600/10 rounded-2xl transition-all group mt-6 border border-slate-800 bg-slate-800/30">
-                    <i class="fa-solid fa-headset text-sky-400 mr-4 w-6 text-xl"></i> 
-                    <span class="font-bold">Suporte</span>
-                </button>
+            <nav class="space-y-4">
+                <button onclick="app.ui.nav('emprestimos')" class="block w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fa-solid fa-hand-holding-dollar mr-3 text-blue-400"></i>Empréstimos</button>
+                <button onclick="app.ui.nav('acompanhamento')" class="block w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fa-solid fa-chart-line mr-3 text-indigo-400"></i>Acompanhamento</button>
+                <button onclick="app.ui.nav('rendimentos')" class="block w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fa-solid fa-calendar-days mr-3 text-emerald-400"></i>Rendimentos Anuais</button>
+                <button onclick="app.ui.nav('fornecedores')" class="block w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fa-solid fa-truck mr-3 text-amber-400"></i>Fornecedores</button>
+                <button onclick="app.ui.nav('usuarios')" id="menuUsuarios" class="hidden block w-full text-left p-3 hover:bg-red-900/30 text-red-400 rounded-lg"><i class="fa-solid fa-users-gear mr-3"></i>Gerenciar Usuários</button>
+                <button onclick="app.ui.nav('alteracoes')" class="block w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fa-solid fa-clock-rotate-left mr-3 text-emerald-400"></i>Alterações</button>
+                <button onclick="app.ui.nav('backup')" id="menuBackup" class="hidden block w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fa-solid fa-database mr-3 text-cyan-400"></i>Backup do Sistema</button>
             </nav>
-            <div class="border-t border-slate-800 pt-4 mt-4">
-                <div class="flex items-center justify-between mb-4 px-2">
-                    <span class="text-xs text-slate-500 font-bold tracking-widest uppercase">Versão</span>
-                    <span class="text-xs text-slate-400 font-black">2.3.0</span>
-                </div>
-                <button onclick="app.auth.logout()" class="w-full p-4 bg-red-900/20 text-red-400 rounded-2xl font-black text-xs uppercase hover:bg-red-900/40 transition-colors">Desconectar</button>
-            </div>
+            <button onclick="location.reload()" class="absolute bottom-5 text-red-400 text-sm">Sair do Sistema</button>
         </aside>
 
-        <main class="p-4 lg:p-8 flex-1">
-
-            <div id="content-emprestimos" class="tab-content active space-y-6">
-                <div class="bg-white dark:bg-darkCard p-6 rounded-3xl border dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div class="w-full md:w-1/3">
-                        <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1 mb-2 block">Filtrar por Usuário / Vendedor</label>
-                        <select id="userFilterSelect" onchange="app.ui.sync()" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold cursor-pointer">
-                            <option value="consolidado">VISÃO CONSOLIDADA (Todos os Usuários)</option>
-                        </select>
-                    </div>
-                    <div class="w-full md:w-2/3 flex flex-col justify-end gap-2">
-                        <div class="flex justify-between items-center px-1">
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Progresso de Retorno Financeiro</span>
-                            <span id="userProgressPct" class="text-sm font-black text-blue-600">0% Pago</span>
-                        </div>
-                        <div class="w-full bg-slate-100 dark:bg-slate-800 h-5 rounded-full overflow-hidden flex border dark:border-slate-700">
-                            <div id="userProgressBarPaid" class="bg-emerald-500 h-full transition-all duration-500" style="width: 0%"></div>
-                            <div id="userProgressBarPending" class="bg-amber-500 h-full transition-all duration-500" style="width: 0%"></div>
-                        </div>
-                        <div class="flex justify-between text-[9px] font-black uppercase tracking-widest px-1 text-slate-400">
-                            <span class="text-emerald-500" id="userProgPaidLabel">Pago: R$ 0,00</span>
-                            <span class="text-amber-500" id="userProgPendingLabel">Pendente: R$ 0,00</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="bg-white dark:bg-darkCard p-5 rounded-3xl border dark:border-slate-800 shadow-sm border-l-4 border-l-blue-500">
-                        <p class="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1">Total Emprestado</p>
-                        <p class="text-lg font-black text-slate-800 dark:text-white" id="metricsTotalOriginal">R$ 0,00</p>
-                        <p class="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Valor base inicial</p>
-                    </div>
-                    <div class="bg-white dark:bg-darkCard p-5 rounded-3xl border dark:border-slate-800 shadow-sm border-l-4 border-l-emerald-500">
-                        <p class="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1">Total Recebido</p>
-                        <p class="text-lg font-black text-emerald-600 dark:text-emerald-400" id="metricsTotalPago">R$ 0,00</p>
-                        <p class="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Baixas realizadas</p>
-                    </div>
-                    <div class="bg-white dark:bg-darkCard p-5 rounded-3xl border dark:border-slate-800 shadow-sm border-l-4 border-l-amber-500">
-                        <p class="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1">A Receber (Diferença)</p>
-                        <p class="text-lg font-black text-amber-600 dark:text-amber-400" id="metricsDiferenca">R$ 0,00</p>
-                        <p class="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Saldo na rua</p>
-                    </div>
-                    <div class="bg-white dark:bg-darkCard p-5 rounded-3xl border dark:border-slate-800 shadow-sm border-l-4 border-l-purple-500">
-                        <p class="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1">Lucro Estimado</p>
-                        <p class="text-lg font-black text-purple-600 dark:text-purple-400" id="metricsLucro">R$ 0,00</p>
-                        <p class="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Rendimentos de juros</p>
-                    </div>
-                </div>
-                
-                <div id="alertSection" class="hidden space-y-3">
-                    <h2 class="text-[10px] font-black text-red-500 uppercase tracking-widest px-2 flex items-center gap-2">
-                        <i class="fa-solid fa-triangle-exclamation animate-bounce"></i> Cobranças Prioritárias (Até 48h)
+        <main class="p-4 flex-1">
+            <div id="content-emprestimos" class="tab-content active space-y-4">
+                <div id="alertSection" class="hidden space-y-2 mb-4">
+                    <h2 class="text-[10px] font-black text-red-500 uppercase tracking-widest flex items-center gap-2">
+                        <i class="fa-solid fa-bell animate-pulse"></i> Cobranças Prioritárias
                     </h2>
-                    <div id="alertList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                    <div id="alertList" class="space-y-2"></div>
                 </div>
 
-                <div class="bg-white dark:bg-darkCard p-6 rounded-3xl border dark:border-slate-800 shadow-sm border-t-[6px] border-t-blue-600">
-                    <h3 class="font-black mb-6 dark:text-white flex items-center gap-2 text-lg">
-                        <i class="fa-solid fa-plus-circle text-blue-600"></i> Cadastrar Novo Empréstimo
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div class="space-y-4">
-                            <div>
-                                <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1 mb-2 block">Nome Completo do Cliente</label>
-                                <input type="text" id="loanClient" placeholder="Ex: Roberto da Silva" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold">
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1 mb-2 block">Valor Inicial</label>
-                                    <input type="text" id="loanValue" placeholder="R$ 0,00" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold" oninput="app.utils.maskMoney(this); app.loans.calc()">
-                                </div>
-                                <div>
-                                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1 mb-2 block">Juros Aplicados (%)</label>
-                                    <input type="number" id="loanRate" placeholder="Ex: 10" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold" oninput="app.loans.calc()">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="space-y-4">
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1 mb-2 block">Dias para Vencimento</label>
-                                    <input type="number" id="loanDays" placeholder="Ex: 30" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold">
-                                </div>
-                                <div>
-                                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1 mb-2 block">WhatsApp para Cobrança</label>
-                                    <input type="text" id="loanWhats" placeholder="(00) 0 0000-0000" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold" oninput="app.utils.maskPhone(this)">
-                                </div>
-                            </div>
-                            <div class="bg-blue-50 dark:bg-blue-900/20 p-5 rounded-2xl flex justify-between items-center border border-blue-100 dark:border-blue-800/30">
-                                <div>
-                                    <p class="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">Total com Juros</p>
-                                    <p class="text-2xl font-black text-blue-700 dark:text-blue-300">R$ <span id="loanTotal">0,00</span></p>
-                                </div>
-                                <button onclick="app.loans.add()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-black shadow-lg">SALVAR</button>
-                            </div>
-                        </div>
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border dark:border-slate-800 shadow-sm">
+                    <h3 id="loanFormTitle" class="font-bold mb-4 text-blue-700 dark:text-blue-400">Novo Empréstimo</h3>
+                    <input type="text" id="loanClient" placeholder="Nome Completo do Cliente" class="w-full p-2 mb-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <input type="text" id="loanValue" placeholder="Valor R$" class="p-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" oninput="app.utils.maskMoney(this); app.loans.calc()">
+                        <input type="number" id="loanRate" placeholder="Juros %" class="p-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" oninput="app.loans.calc()">
                     </div>
+                    <div class="grid grid-cols-2 gap-2 mb-4">
+                        <input type="number" id="loanDays" placeholder="Prazo (Dias)" class="p-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
+                        <input type="text" id="loanWhats" placeholder="WhatsApp" class="p-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" oninput="app.utils.maskPhone(this)">
+                    </div>
+                    <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg mb-4 flex justify-between items-center font-bold text-blue-700 dark:text-blue-400 text-lg">
+                        <span>Total: R$ <span id="loanTotal">0,00</span></span>
+                    </div>
+                    <button id="btnSubmitLoan" onclick="app.loans.add()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold">Cadastrar</button>
                 </div>
-                
-                <div class="flex justify-between items-center px-1">
-                    <span class="text-xs text-slate-400 font-black tracking-widest uppercase">Controle de Carteira ATIVA</span>
-                    <span id="loanCounter" class="text-xs text-blue-600 font-black bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full border border-blue-100">0 Cadastros</span>
-                </div>
-                <div id="loanList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-24"></div>
+                <div id="loanList" class="space-y-3 mt-6 pb-10"></div>
             </div>
 
-            <div id="content-acompanhamento" class="tab-content space-y-6">
-                <div class="bg-white dark:bg-darkCard p-6 rounded-3xl border dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 transition-all duration-300">
-                    <div class="w-full md:w-1/3">
-                        <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1 mb-2 block">Filtrar Usuário para Acompanhamento</label>
-                        <select id="acompFilterSelect" onchange="app.ui.sync()" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold cursor-pointer transition-all">
-                            <option value="consolidado">VISÃO CONSOLIDADA (Todos os Usuários)</option>
+            <div id="content-acompanhamento" class="tab-content space-y-4">
+                <div class="flex justify-between items-center bg-white dark:bg-slate-900 p-4 border dark:border-slate-800 rounded-xl shadow-sm">
+                    <div>
+                        <h3 class="font-bold text-slate-700 dark:text-slate-200">Acompanhamento e Métricas</h3>
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Gestão financeira consolidada</p>
+                    </div>
+                    <button onclick="app.ui.clearAcompanhamentoData()" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2 rounded-lg flex items-center gap-2">
+                        <i class="fa-solid fa-trash-can"></i> Limpar Dados
+                    </button>
+                </div>
+
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border dark:border-slate-800 shadow-sm space-y-4">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-2">Filtrar por Usuário / Vendedor</label>
+                        <select id="filterUser" class="w-full p-3 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 dark:text-white rounded-xl font-bold text-sm">
+                            <option value="todos">VISÃO CONSOLIDADA (Todos os Usuários)</option>
                         </select>
                     </div>
-                    <div class="w-full md:w-2/3 flex flex-col justify-end gap-2">
-                        <div class="flex justify-between items-center px-1">
-                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Meta de Retorno Financeiro Concluída</span>
-                            <span id="acompProgressPct" class="text-sm font-black text-indigo-600">0% Pago</span>
+
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center text-xs font-bold">
+                            <span class="text-slate-400">PROGRESSO DE RETORNO FINANCEIRO</span>
+                            <span id="progressPercent" class="text-blue-600 dark:text-blue-400">0% Pago</span>
                         </div>
-                        <div class="w-full bg-slate-100 dark:bg-slate-800 h-6 rounded-full overflow-hidden flex border dark:border-slate-700">
-                            <div id="acompProgressBarPaid" class="bg-emerald-500 h-full transition-all duration-500" style="width: 0%"></div>
-                            <div id="acompProgressBarPending" class="bg-amber-500 h-full transition-all duration-500" style="width: 0%"></div>
+                        <div class="w-full bg-slate-200 dark:bg-slate-800 h-3 rounded-full overflow-hidden">
+                            <div id="progressBar" class="bg-emerald-500 h-full transition-all duration-500" style="width: 0%;"></div>
                         </div>
-                        <div class="flex justify-between text-[9px] font-black uppercase tracking-widest px-1 text-slate-400">
-                            <span class="text-emerald-500" id="acompProgPaidLabel">Recebido: R$ 0,00</span>
-                            <span class="text-amber-500" id="acompProgPendingLabel">Pendente/Vencido: R$ 0,00</span>
+                        <div class="flex justify-between items-center text-[10px] font-black uppercase tracking-wider">
+                            <span class="text-emerald-500">Pago: R$ <span id="dashPago">0,00</span></span>
+                            <span class="text-amber-500">Pendente: R$ <span id="dashPendente">0,00</span></span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border dark:border-slate-800">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Total Emprestado</span>
+                            <span class="text-lg font-bold dark:text-white block" id="dashTotalEmprestado">R$ 0,00</span>
+                            <span class="text-[9px] text-slate-400 block mt-1">VALOR BASE</span>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border dark:border-slate-800">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Total Recebido</span>
+                            <span class="text-lg font-bold text-emerald-500 block" id="dashTotalRecebido">R$ 0,00</span>
+                            <span class="text-[9px] text-slate-400 block mt-1">BAIXAS REALIZADAS</span>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border dark:border-slate-800">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">A Receber</span>
+                            <span class="text-lg font-bold text-amber-500 block" id="dashAReceber">R$ 0,00</span>
+                            <span class="text-[9px] text-slate-400 block mt-1">SALDO NA RUA</span>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border dark:border-slate-800">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Lucro Estimado</span>
+                            <span class="text-lg font-bold text-purple-500 block" id="dashLucroEstimado">R$ 0,00</span>
+                            <span class="text-[9px] text-slate-400 block mt-1">RETORNO DE JUROS</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white dark:bg-darkCard p-6 rounded-3xl border dark:border-slate-800 shadow-sm border-t-[6px] border-t-indigo-500 flex flex-col justify-between">
-                        <div>
-                            <h3 class="font-black text-slate-800 dark:text-white text-base flex items-center gap-2 mb-4">
-                                <i class="fa-solid fa-chart-pie text-indigo-500"></i> Composição da Carteira
-                            </h3>
-                            <div class="space-y-4">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Volume Pago</span>
-                                    <span id="acompStatPaid" class="font-black text-emerald-500">R$ 0,00</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Volume Pendente</span>
-                                    <span id="acompStatPending" class="font-black text-amber-500">R$ 0,00</span>
-                                </div>
-                                <div class="flex justify-between items-center border-t dark:border-slate-800 pt-3">
-                                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Geral Envolvido</span>
-                                    <span id="acompStatTotal" class="font-black text-blue-500">R$ 0,00</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white dark:bg-darkCard p-6 rounded-3xl border dark:border-slate-800 shadow-sm border-t-[6px] border-t-emerald-500 md:col-span-2 flex flex-col justify-between">
-                        <div>
-                            <h3 class="font-black text-slate-800 dark:text-white text-base flex items-center gap-2 mb-4">
-                                <i class="fa-solid fa-list-check text-emerald-500"></i> Detalhamento do Status
-                            </h3>
-                            <div class="space-y-5">
-                                <div>
-                                    <div class="flex justify-between text-xs font-bold uppercase tracking-wider mb-1">
-                                        <span class="text-emerald-500">Registros Pagos</span>
-                                        <span id="acompListPaidPct" class="dark:text-white">0%</span>
-                                    </div>
-                                    <div class="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden flex">
-                                        <div id="acompListPaidBar" class="bg-emerald-500 h-full" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="flex justify-between text-xs font-bold uppercase tracking-wider mb-1">
-                                        <span class="text-amber-500">Registros Pendentes</span>
-                                        <span id="acompListPendingPct" class="dark:text-white">0%</span>
-                                    </div>
-                                    <div class="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden flex">
-                                        <div id="acompListPendingBar" class="bg-amber-500 h-full" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="flex justify-between text-xs font-bold uppercase tracking-wider mb-1">
-                                        <span class="text-red-500">Registros Vencidos</span>
-                                        <span id="acompListExpiredPct" class="dark:text-white">0%</span>
-                                    </div>
-                                    <div class="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden flex">
-                                        <div id="acompListExpiredBar" class="bg-red-500 h-full" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white dark:bg-darkCard p-6 rounded-3xl border dark:border-slate-800 shadow-sm border-t-[6px] border-t-indigo-600">
-                    <h3 class="font-black mb-6 dark:text-white text-lg flex items-center gap-2">
-                        <i class="fa-solid fa-users text-indigo-600"></i> Desempenho de Pagamentos por Cliente
-                    </h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="text-[10px] font-black text-slate-400 uppercase tracking-wider border-b dark:border-slate-800">
-                                    <th class="pb-3">Cliente</th>
-                                    <th class="pb-3">Vendedor</th>
-                                    <th class="pb-3">Total do Crédito</th>
-                                    <th class="pb-3">Status</th>
-                                    <th class="pb-3 text-right">Prazo Restante</th>
-                                </tr>
-                            </thead>
-                            <tbody id="acompTableBody" class="divide-y dark:divide-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300">
-                            </tbody>
-                        </table>
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border dark:border-slate-800 shadow-sm">
+                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-purple-500"></i> Histórico de Juros Acumulados (Renovações)
+                    </h4>
+                    <div id="renewalHistoryList" class="space-y-3">
+                        <p class="text-xs text-slate-500 text-center py-4">Nenhuma renovação de juros registrada.</p>
                     </div>
                 </div>
             </div>
 
-            <div id="content-fornecedores" class="tab-content space-y-6">
-                <div class="bg-white dark:bg-darkCard p-6 rounded-3xl border dark:border-slate-800 shadow-sm border-t-[6px] border-t-amber-500">
-                    <h3 class="font-black mb-6 dark:text-white text-lg flex items-center gap-2"><i class="fa-solid fa-plus-circle text-amber-500"></i> Novo Investidor / Fornecedor</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1 mb-2 block">Nome</label>
-                            <input type="text" id="supName" placeholder="Ex: Roberto Investidor" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1 mb-2 block">WhatsApp</label>
-                            <input type="text" id="supWhats" placeholder="(00) 0 0000-0000" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold" oninput="app.utils.maskPhone(this)">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1 mb-2 block">Chave Pix</label>
-                            <input type="text" id="supPix" placeholder="Ex: E-mail ou CPF" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1 mb-2 block">Aporte (R$)</label>
-                            <input type="text" id="supValue" placeholder="R$ 0,00" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold" oninput="app.utils.maskMoney(this)">
-                        </div>
-                        <button onclick="app.suppliers.add()" class="md:col-span-2 bg-amber-500 hover:bg-amber-600 text-white py-4 rounded-2xl font-black shadow-lg mt-2 select-none tracking-wider">SALVAR FORNECEDOR</button>
+            <div id="content-rendimentos" class="tab-content space-y-4">
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border dark:border-slate-800 shadow-sm space-y-4">
+                    <div>
+                        <h3 class="font-bold text-slate-700 dark:text-slate-200">Rendimentos Anuais</h3>
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-4">Selecione o Mês e Ano para filtrar os resultados</p>
                     </div>
-                </div>
-                <div class="flex justify-between items-center px-1">
-                    <span class="text-xs text-slate-400 font-black tracking-widest uppercase">Investidores e Fornecedores</span>
-                    <span id="supCounter" class="text-xs text-amber-600 font-black bg-amber-50 dark:bg-amber-900/30 px-3 py-1 rounded-full border border-amber-100">0 Cadastros</span>
-                </div>
-                <div id="supList" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
-            </div>
 
-            <div id="content-usuarios" class="tab-content space-y-6">
-                <div class="bg-white dark:bg-darkCard p-6 rounded-3xl border dark:border-slate-800 shadow-sm border-t-[6px] border-t-red-600">
-                    <h3 class="font-black mb-6 dark:text-white text-lg flex items-center gap-2"><i class="fa-solid fa-plus-circle text-red-600"></i> Configuração de Equipe</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1 mb-2 block">Nome Completo</label>
-                            <input type="text" id="newUserName" placeholder="Ex: Marcos Vendedor" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1 mb-2 block">Usuário de Acesso (Login)</label>
-                            <input type="text" id="newUserEmail" placeholder="Ex: marcos_vendas" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1 mb-2 block">Senha Temporária</label>
-                            <input type="password" id="newUserPass" placeholder="Mínimo 4 caracteres" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1 mb-2 block">Tipo de Permissão</label>
-                            <select id="newUserRole" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold cursor-pointer">
-                                <option value="comum">Vendedor (Visualização e Cadastro)</option>
-                                <option value="admin">Administrador (Todas as Permissões)</option>
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Mês</label>
+                            <select id="annualMonthFilter" class="w-full p-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg font-bold text-sm" onchange="app.ui.updateAnnualMetrics()">
+                                <option value="01">Janeiro</option>
+                                <option value="02">Fevereiro</option>
+                                <option value="03">Março</option>
+                                <option value="04">Abril</option>
+                                <option value="05">Maio</option>
+                                <option value="06">Junho</option>
+                                <option value="07">Julho</option>
+                                <option value="08">Agosto</option>
+                                <option value="09">Setembro</option>
+                                <option value="10">Outubro</option>
+                                <option value="11">Novembro</option>
+                                <option value="12">Dezembro</option>
                             </select>
                         </div>
-                        <button onclick="app.users.add()" class="md:col-span-2 bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black shadow-lg mt-2 tracking-wider">CRIAR NOVO MEMBRO</button>
-                    </div>
-                </div>
-                <div class="flex justify-between items-center px-1">
-                    <span class="text-xs text-slate-400 font-black tracking-widest uppercase">Integrantes do Sistema</span>
-                    <span id="userCounter" class="text-xs text-red-600 font-black bg-red-50 dark:bg-red-900/30 px-3 py-1 rounded-full border border-red-100">0 Usuários</span>
-                </div>
-                <div id="userList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-            </div>
-
-            <div id="content-alteracoes" class="tab-content space-y-6">
-                <div class="bg-white dark:bg-darkCard p-6 rounded-3xl border dark:border-slate-800 shadow-sm border-t-[6px] border-t-emerald-600">
-                    <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6">
                         <div>
-                            <h3 class="font-black dark:text-white text-lg flex items-center gap-2">
-                                <i class="fa-solid fa-clipboard-list text-emerald-600"></i> Histórico Recente de Atividades
-                            </h3>
-                            <p class="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Acompanhamento das últimas alterações</p>
+                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Ano</label>
+                            <select id="annualYearFilter" class="w-full p-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg font-bold text-sm" onchange="app.ui.updateAnnualMetrics()">
+                                </select>
                         </div>
-                        <button onclick="if(confirm('Limpar histórico completamente?')) db.ref('logs').remove()" class="bg-red-50 hover:bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all self-start border border-red-100 dark:border-red-800/40">Limpar Log</button>
                     </div>
-                    <div id="logsBody" class="space-y-3 divide-y-0 max-h-[500px] overflow-y-auto pr-2"></div>
-                </div>
-            </div>
 
-            <div id="content-gestao-dados" class="tab-content space-y-6">
-                <div class="bg-white dark:bg-darkCard p-6 rounded-3xl border dark:border-slate-800 shadow-sm border-t-[6px] border-t-purple-600">
-                    <h3 class="font-black mb-6 dark:text-white text-lg flex items-center gap-2"><i class="fa-solid fa-database text-purple-600"></i> Gestão Avançada de Dados</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-slate-50 dark:bg-slate-800/40 p-5 rounded-2xl border dark:border-slate-700 flex flex-col justify-between">
-                            <div>
-                                <h4 class="font-black text-sm text-slate-800 dark:text-slate-200 uppercase flex items-center gap-2">
-                                    <i class="fa-solid fa-file-excel text-emerald-500"></i> Relatório em Planilha
-                                </h4>
-                                <p class="text-[10px] font-bold text-slate-400 mt-1 leading-relaxed">Gera uma planilha compatível com Excel (.csv) contendo os registros de todos os clientes, investidores e logs.</p>
-                            </div>
-                            <button onclick="app.data.exportCsv()" class="w-full mt-5 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-black text-xs uppercase tracking-wider shadow-md">Exportar Planilha (CSV)</button>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 border-t dark:border-slate-800 pt-4 mt-2">
+                        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border dark:border-slate-800">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Empréstimos Cadastrados</span>
+                            <span class="text-lg font-bold text-blue-600 block" id="annualTotalEmprestado">R$ 0,00</span>
+                            <span class="text-[9px] text-slate-400 block mt-1">Capital inicial investido no mês</span>
                         </div>
-
-                        <div class="bg-slate-50 dark:bg-slate-800/40 p-5 rounded-2xl border dark:border-slate-700 flex flex-col justify-between">
-                            <div>
-                                <h4 class="font-black text-sm text-slate-800 dark:text-slate-200 uppercase flex items-center gap-2">
-                                    <i class="fa-solid fa-database text-purple-500"></i> Cópia de Segurança do Sistema
-                                </h4>
-                                <p class="text-[10px] font-bold text-slate-400 mt-1 leading-relaxed">Cria e baixa um arquivo completo com os dados cruciais do sistema para restauração completa.</p>
-                            </div>
-                            <div class="grid grid-cols-2 gap-3 mt-5">
-                                <button onclick="app.data.exportJsonBackup()" class="bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl font-black text-[10px] uppercase tracking-wider shadow-md">Salvar Backup</button>
-                                <label for="importBackupInput" class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-200 py-3.5 rounded-xl font-black text-[10px] uppercase text-center cursor-pointer">Restaurar Backup</label>
-                                <input type="file" id="importBackupInput" class="hidden" accept=".json" onchange="app.data.importJsonBackup(this)">
-                            </div>
+                        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border dark:border-slate-800">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Retorno de Baixas</span>
+                            <span class="text-lg font-bold text-emerald-500 block" id="annualTotalRecebido">R$ 0,00</span>
+                            <span class="text-[9px] text-slate-400 block mt-1">Valores totais recuperados</span>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border dark:border-slate-800">
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">Lucro Estimado</span>
+                            <span class="text-lg font-bold text-purple-500 block" id="annualLucroEstimado">R$ 0,00</span>
+                            <span class="text-[9px] text-slate-400 block mt-1">Soma de Juros e Renovações</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div id="content-suporte" class="tab-content space-y-6">
-                <div class="bg-white dark:bg-darkCard p-6 rounded-3xl border dark:border-slate-800 shadow-sm border-t-[6px] border-t-sky-500">
-                    <h3 class="font-black mb-6 dark:text-white text-lg flex items-center gap-2">
-                        <i class="fa-solid fa-headset text-sky-500"></i> Central de Suporte Técnico
-                    </h3>
-                    <div class="bg-slate-50 dark:bg-slate-800/40 p-6 rounded-2xl border dark:border-slate-700 space-y-4">
-                        <p class="text-sm font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
-                            Precisa de ajuda com o sistema ou encontrou algum problema técnico? Entre em contato diretamente com o desenvolvedor responsável pelo sistema clicando no botão abaixo.
-                        </p>
-                        <div class="pt-2">
-                            <a href="https://wa.me/5585982008344" target="_blank" class="inline-flex items-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-4 rounded-xl font-black text-xs uppercase tracking-wider shadow-md transition-all">
-                                <i class="fa-brands fa-whatsapp text-lg"></i> Falar com Suporte Técnico
-                            </a>
-                        </div>
-                    </div>
+            <div id="content-fornecedores" class="tab-content space-y-4">
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border dark:border-slate-800 shadow-sm">
+                    <h3 id="supFormTitle" class="font-bold mb-4 text-amber-600 dark:text-amber-400">Novo Fornecedor</h3>
+                    <input type="text" id="supName" placeholder="Nome da Empresa/Fornecedor" class="w-full p-2 mb-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
+                    <input type="text" id="supWhats" placeholder="WhatsApp" class="w-full p-2 mb-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" oninput="app.utils.maskPhone(this)">
+                    <input type="text" id="supPix" placeholder="Chave Pix" class="w-full p-2 mb-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
+                    <input type="text" id="supValue" placeholder="Valor Fornecido R$" class="w-full p-2 mb-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg" oninput="app.utils.maskMoney(this)">
+                    <button id="btnSubmitSup" onclick="app.suppliers.add()" class="w-full bg-amber-500 text-white py-3 rounded-xl font-bold">Salvar</button>
                 </div>
+                <div id="supList" class="space-y-3 mt-6"></div>
             </div>
 
+            <div id="content-usuarios" class="tab-content space-y-4">
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border dark:border-slate-800 shadow-sm">
+                    <h3 class="font-bold mb-4 text-red-600">Gestão de Usuários</h3>
+                    <input type="text" id="newUserName" placeholder="Nome para Acesso" class="w-full p-2 mb-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
+                    <input type="password" id="newUserPass" placeholder="Senha de Acesso" class="w-full p-2 mb-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
+                    <select id="newUserRole" class="w-full p-2 mb-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg">
+                        <option value="comum">Comum</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                    <button onclick="app.users.add()" class="w-full bg-red-600 text-white py-3 rounded-xl font-bold">Criar Acesso</button>
+                </div>
+                <div id="userList" class="space-y-2"></div>
+            </div>
+
+            <div id="content-alteracoes" class="tab-content space-y-2">
+                <div id="adminLogControls" class="hidden flex gap-2 mb-4">
+                    <button onclick="app.logs.clear()" class="w-full bg-red-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase"><i class="fa-solid fa-trash mr-2"></i>Limpar Histórico</button>
+                </div>
+                <h3 class="font-bold text-slate-500 dark:text-slate-400 text-[10px] uppercase px-2 mb-4 tracking-widest">Assinatura de Alterações e Movimentações</h3>
+                <div id="logList" class="space-y-2"></div>
+            </div>
+
+            <div id="content-backup" class="tab-content space-y-4">
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-xl border dark:border-slate-800 shadow-sm">
+                    <h3 class="font-bold mb-2 text-cyan-600 dark:text-cyan-400">Backup Completo do Sistema</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Esta função baixa um arquivo contendo todos os dados registrados no seu banco de dados (Empréstimos, Fornecedores, Usuários e Histórico).</p>
+                    <button onclick="app.utils.generateBackup()" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"><i class="fa-solid fa-file-export"></i> Baixar Arquivo de Backup</button>
+                </div>
+            </div>
         </main>
     </div>
 
     <script>
         const firebaseConfig = {
-            databaseURL: "https://ecbusiness-9e6be-default-rtdb.firebaseio.com/"
+            apiKey: "AIzaSyB8Zo9q55deQdI-QtfHOSGqURXqvR8Mfn8",
+            authDomain: "ecbusiness-app.firebaseapp.com",
+            databaseURL: "https://ecbusiness-app-default-rtdb.firebaseio.com",
+            projectId: "ecbusiness-app",
+            storageBucket: "ecbusiness-app.firebasestorage.app",
+            messagingSenderId: "943619157636",
+            appId: "1:943619157636:web:db3d9a507d102b9e34dc04"
         };
-        
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        function toggleLoginPassword() {
-            const passInput = document.getElementById('loginPass');
-            const eyeIcon = document.getElementById('eyeIcon');
-            if (passInput.type === 'password') {
-                passInput.type = 'text';
-                eyeIcon.classList.remove('fa-eye');
-                eyeIcon.classList.add('fa-eye-slash');
-            } else {
-                passInput.type = 'password';
-                eyeIcon.classList.remove('fa-eye-slash');
-                eyeIcon.classList.add('fa-eye');
+        window.onload = () => {
+            if(localStorage.getItem('ec_user')) {
+                document.getElementById('loginUser').value = localStorage.getItem('ec_user');
+                document.getElementById('loginPass').value = localStorage.getItem('ec_pass');
+                document.getElementById('rememberMe').checked = true;
             }
-        }
 
-        var app = {
-            currentUser: null,
+            const yrSelect = document.getElementById('annualYearFilter');
+            const thisYear = new Date().getFullYear();
+            for (let y = thisYear; y >= thisYear - 4; y--) {
+                const o = document.createElement('option');
+                o.value = y;
+                o.innerText = y;
+                yrSelect.appendChild(o);
+            }
+            const thisMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+            document.getElementById('annualMonthFilter').value = thisMonth;
+        };
+
+        const app = {
+            state: { user: null, userId: null, editingLoanKey: null, editingSupKey: null, allLoans: [], allRenewals: [] },
+
+            utils: {
+                isValidName: (name) => {
+                    const trimmed = name.trim();
+                    return trimmed.length >= 2;
+                },
+                maskMoney: (i) => {
+                    let v = i.value.replace(/\D/g, "");
+                    v = (v / 100).toFixed(2) + "";
+                    v = v.replace(".", ",");
+                    v = v.replace(/(\d)(\d{3})(\d{3}),/g, "$1.$2.$3,");
+                    v = v.replace(/(\d)(\d{3}),/g, "$1.$2,");
+                    i.value = v;
+                },
+                maskPhone: (i) => {
+                    let v = i.value.replace(/\D/g, "");
+                    if (v.length > 11) v = v.substring(0, 11);
+                    if (v.length > 10) i.value = `(${v.substring(0, 2)}) ${v.substring(2, 3)} ${v.substring(3, 7)}-${v.substring(7, 11)}`;
+                    else if (v.length > 6) i.value = `(${v.substring(0, 2)}) ${v.substring(2, 6)}-${v.substring(6, 10)}`;
+                    else if (v.length > 2) i.value = `(${v.substring(0, 2)}) ${v.substring(2)}`;
+                    else if (v.length > 0) i.value = `(${v}`;
+                },
+                parseValue: (v) => parseFloat(v.replace(/\./g, "").replace(",", ".")) || 0,
+                formatToWhatsAppNumber: (phone) => {
+                    let cleaned = phone.replace(/\D/g, '');
+                    if (cleaned.length === 0) return '';
+                    if (cleaned.length <= 11) return '55' + cleaned;
+                    return cleaned;
+                },
+                generateBackup: () => {
+                    db.ref('/').once('value', snap => {
+                        const data = JSON.stringify(snap.val(), null, 2);
+                        const blob = new Blob([data], {type: 'application/json'});
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `backup_ecbusiness_${new Date().toISOString().slice(0,10)}.json`;
+                        a.click();
+                        app.logs.add("GEROU BACKUP do sistema");
+                    });
+                }
+            },
+
             auth: {
-                login: function() {
-                    const userInp = document.getElementById('loginUser').value.trim().toLowerCase();
-                    const passInp = document.getElementById('loginPass').value.trim();
-
-                    if (!userInp || !passInp) {
-                        alert('Por favor, preencha todos os campos.');
-                        return;
-                    }
-
-                    db.ref('users').once('value', snapshot => {
-                        let userKey = null;
-                        let userData = null;
-
-                        if (snapshot.exists()) {
-                            snapshot.forEach(child => {
-                                const u = child.val();
-                                if (u.usuario === userInp) {
-                                    userKey = child.key;
-                                    userData = u;
-                                }
-                            });
-                        }
-
-                        // Se o usuário for yamadaki e não existir na base de dados, cria automaticamente
-                        if (!userData && userInp === "yamadaki") {
-                            const defaultAdmin = {
-                                nome: "Yamadaki",
-                                usuario: "yamadaki",
-                                senha: "Teddy13@4",
-                                role: "admin",
-                                forceChange: false,
-                                dataCriacao: new Date().toISOString()
-                            };
-
-                            db.ref('users').push(defaultAdmin).then(snapRef => {
-                                app.auth.setSession(snapRef.key, defaultAdmin);
-                                app.auth.completeLogin(userInp, passInp);
-                            }).catch(err => {
-                                console.error(err);
-                                alert('Erro ao criar o usuário inicial.');
-                            });
-                            return;
-                        }
-
-                        // Validação normal para demais usuários ou se o yamadaki já existir
-                        if (userData) {
-                            if (userData.senha === passInp) {
-                                if (userData.forceChange === true) {
-                                    document.getElementById('passwordOverlay').classList.add('show');
-                                    window.tempUserKey = userKey;
-                                } else {
-                                    app.auth.setSession(userKey, userData);
-                                    app.auth.completeLogin(userInp, passInp);
-                                }
-                            } else {
-                                alert('Acesso incorreto! Verifique a sua senha.');
-                            }
-                        } else {
-                            alert('Utilizador não registado.');
-                        }
-                    }).catch(err => {
-                        console.error(err);
-                        alert('Erro ao ligar ao servidor de autenticação.');
-                    });
-                },
-                updateRequiredPassword: function() {
-                    const p1 = document.getElementById('newPassRequired').value.trim();
-                    const p2 = document.getElementById('newPassConfirm').value.trim();
-                    if(!p1 || !p2) { alert('Ambos os campos devem estar preenchidos!'); return; }
-                    if(p1 !== p2) { alert('As senhas informadas não conferem!'); return; }
-                    if(p1.length < 4) { alert('A senha deve conter ao menos 4 caracteres!'); return; }
+                login: () => {
+                    const u = document.getElementById('loginUser').value.trim();
+                    const p = document.getElementById('loginPass').value;
                     
-                    db.ref(`users/${window.tempUserKey}`).update({ senha: p1, forceChange: false }).then(() => {
-                        alert('Senha atualizada com sucesso! Prossiga efetuando o login novamente.');
-                        document.getElementById('passwordOverlay').classList.remove('show');
-                        document.getElementById('loginPass').value = '';
-                    });
-                },
-                setSession: function(key, data) {
-                    data.key = key;
-                    app.currentUser = data;
-                    localStorage.setItem('loggedUser', JSON.stringify(data));
-                },
-                completeLogin: function(u, p) {
-                    if (document.getElementById('rememberMe').checked) {
-                        localStorage.setItem('savedUser', u);
-                        localStorage.setItem('savedPass', p);
-                    } else {
-                        localStorage.removeItem('savedUser');
-                        localStorage.removeItem('savedPass');
-                    }
-                    
-                    document.getElementById('loginPage').classList.add('hidden');
-                    document.getElementById('dashboard').classList.remove('hidden');
-                    
-                    if (app.currentUser.role === 'admin') {
-                        document.getElementById('menuUsuarios').classList.remove('hidden');
-                    } else {
-                        document.getElementById('menuUsuarios').classList.add('hidden');
+                    if(document.getElementById('rememberMe').checked) {
+                        localStorage.setItem('ec_user', u);
+                        localStorage.setItem('ec_pass', p);
                     }
 
-                    if (app.currentUser.photo) {
-                        document.getElementById('userBadge').innerHTML = `<img src="${app.currentUser.photo}" class="profile-img">`;
-                    } else {
-                        document.getElementById('userBadge').innerHTML = app.currentUser.nome.charAt(0).toUpperCase();
-                    }
-
-                    app.ui.init();
-                    app.logs.add(`Realizou login no painel`);
-                },
-                autoLogin: function() {
-                    const logged = localStorage.getItem('loggedUser');
-                    if (logged) {
-                        const u = JSON.parse(logged);
-                        app.auth.setSession(u.key, u);
-                        document.getElementById('loginPage').classList.add('hidden');
-                        document.getElementById('dashboard').classList.remove('hidden');
-                        
-                        if (u.role === 'admin') {
-                            document.getElementById('menuUsuarios').classList.remove('hidden');
-                        } else {
-                            document.getElementById('menuUsuarios').classList.add('hidden');
-                        }
-
-                        if (u.photo) {
-                            document.getElementById('userBadge').innerHTML = `<img src="${u.photo}" class="profile-img">`;
-                        } else {
-                            document.getElementById('userBadge').innerHTML = u.nome.charAt(0).toUpperCase();
-                        }
+                    if(u.toLowerCase() === 'yamadaki' && p === 'Teddy13@4') {
+                        app.state.user = { nome: 'yamadaki', role: 'admin' };
+                        app.state.userId = 'admin_root';
                         app.ui.init();
-                    } else {
-                        const svU = localStorage.getItem('savedUser');
-                        const svP = localStorage.getItem('savedPass');
-                        if (svU && svP) {
-                            document.getElementById('loginUser').value = svU;
-                            document.getElementById('loginPass').value = svP;
-                            document.getElementById('rememberMe').checked = true;
-                        }
-                    }
-                },
-                logout: function() {
-                    localStorage.removeItem('loggedUser');
-                    location.reload();
-                }
-            },
-
-            ui: {
-                init: function() {
-                    app.ui.nav('emprestimos');
-                    app.ui.sync();
-
-                    db.ref('users').on('value', snap => {
-                        const sel1 = document.getElementById('userFilterSelect');
-                        const sel2 = document.getElementById('acompFilterSelect');
-                        const v1 = sel1.value;
-                        const v2 = sel2.value;
-                        let html = `<option value="consolidado">VISÃO CONSOLIDADA (Todos os Usuários)</option>`;
-                        snap.forEach(c => {
-                            const u = c.val();
-                            html += `<option value="${u.usuario}">${u.nome.toUpperCase()} (${u.role})</option>`;
-                        });
-                        sel1.innerHTML = html;
-                        sel2.innerHTML = html;
-                        sel1.value = v1 || 'consolidado';
-                        sel2.value = v2 || 'consolidado';
-                    });
-                },
-                nav: function(tabId) {
-                    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-                    const target = document.getElementById(`content-${tabId}`);
-                    if (target) target.classList.add('active');
-
-                    const titles = {
-                        'emprestimos': 'Painel de Empréstimos',
-                        'acompanhamento': 'Relatório & Desempenho',
-                        'fornecedores': 'Gestão de Investidores',
-                        'usuarios': 'Equipe do Sistema',
-                        'alteracoes': 'Log de Atividades',
-                        'gestao-dados': 'Dados & Backup',
-                        'suporte': 'Central de Suporte'
-                    };
-                    document.getElementById('headerTitle').innerText = titles[tabId] || 'Painel de Controle';
-                    app.ui.toggleMenu(false);
-                },
-                toggleMenu: function(open) {
-                    const side = document.getElementById('mobileSidebar');
-                    const over = document.getElementById('sidebarOverlay');
-                    if (open) {
-                        side.classList.add('open');
-                        over.classList.add('show');
-                    } else {
-                        side.classList.remove('open');
-                        over.classList.remove('show');
-                    }
-                },
-                sync: function() {
-                    const f1 = document.getElementById('userFilterSelect').value;
-                    const f2 = document.getElementById('acompFilterSelect').value;
-                    
-                    app.loans.render(f1);
-                    app.suppliers.render();
-                    app.users.render();
-                    app.logs.render();
-
-                    db.ref('loans').on('value', snap => {
-                        let volPago = 0, volPend = 0, volTotal = 0;
-                        let contPagos = 0, contPend = 0, contVenc = 0;
-                        let totalLoans = 0;
-
-                        const now = new Date();
-                        now.setHours(0,0,0,0);
-
-                        let acompHtml = '';
-                        snap.forEach(child => {
-                            const l = child.val();
-                            if (f2 === 'consolidado' || l.createdBy === f2) {
-                                totalLoans++;
-                                const original = app.utils.parse(l.valorOriginal);
-                                const juros = app.utils.parse(l.valorOriginal) * (parseFloat(l.taxaJuros) / 100);
-                                const total = original + juros;
-
-                                volTotal += total;
-
-                                const dVenc = new Date(l.dataVencimento + 'T23:59:59');
-                                const diffMs = dVenc - now;
-                                const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
-                                let statusBadge = '';
-                                let badgePrazo = '';
-
-                                if (l.status === 'pago') {
-                                    volPago += total;
-                                    contPagos++;
-                                    statusBadge = `<span class="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider">Pago</span>`;
-                                    badgePrazo = `<span class="text-slate-400">Finalizado</span>`;
-                                } else {
-                                    volPend += total;
-                                    if (diffDays < 0) {
-                                        contVenc++;
-                                        statusBadge = `<span class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider">Vencido</span>`;
-                                        badgePrazo = `<span class="text-red-500 uppercase tracking-widest text-[9px]">Atrasado em ${Math.abs(diffDays)} dias</span>`;
-                                    } else {
-                                        contPend++;
-                                        statusBadge = `<span class="bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider">Ativo</span>`;
-                                        badgePrazo = `<span class="text-indigo-500 uppercase tracking-widest text-[9px]">Vence em ${diffDays} dias</span>`;
-                                    }
-                                }
-
-                                acompHtml += `<tr class="border-b dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                                    <td class="py-4 font-black text-slate-800 dark:text-white">${l.cliente.toUpperCase()}</td>
-                                    <td class="py-4 text-slate-400 font-bold">@${l.createdBy}</td>
-                                    <td class="py-4 font-black">${app.utils.fmt(total)}</td>
-                                    <td class="py-4">${statusBadge}</td>
-                                    <td class="py-4 text-right font-black">${badgePrazo}</td>
-                                </tr>`;
-                            }
-                        });
-
-                        document.getElementById('acompTableBody').innerHTML = acompHtml || `<tr><td colspan="5" class="py-6 text-center text-slate-400 font-bold">Nenhum registro localizado.</td></tr>`;
-                        
-                        document.getElementById('acompStatPaid').innerText = app.utils.fmt(volPago);
-                        document.getElementById('acompStatPending').innerText = app.utils.fmt(volPend);
-                        document.getElementById('acompStatTotal').innerText = app.utils.fmt(volTotal);
-
-                        const pPct = volTotal > 0 ? Math.round((volPago / volTotal) * 100) : 0;
-                        const pendPct = volTotal > 0 ? Math.round((volPend / volTotal) * 100) : 0;
-
-                        document.getElementById('acompProgressPct').innerText = `${pPct}% Pago`;
-                        document.getElementById('acompProgressBarPaid').style.width = `${pPct}%`;
-                        document.getElementById('acompProgressBarPending').style.width = `${pendPct}%`;
-
-                        document.getElementById('acompProgPaidLabel').innerText = `Recebido: ${app.utils.fmt(volPago)}`;
-                        document.getElementById('acompProgPendingLabel').innerText = `Pendente: ${app.utils.fmt(volPend)}`;
-
-                        const pctPaidCount = totalLoans > 0 ? Math.round((contPagos / totalLoans) * 100) : 0;
-                        const pctPendingCount = totalLoans > 0 ? Math.round((contPend / totalLoans) * 100) : 0;
-                        const pctExpiredCount = totalLoans > 0 ? Math.round((contVenc / totalLoans) * 100) : 0;
-
-                        document.getElementById('acompListPaidPct').innerText = `${pctPaidCount}%`;
-                        document.getElementById('acompListPaidBar').style.width = `${pctPaidCount}%`;
-                        document.getElementById('acompListPendingPct').innerText = `${pctPendingCount}%`;
-                        document.getElementById('acompListPendingBar').style.width = `${pctPendingCount}%`;
-                        document.getElementById('acompListExpiredPct').innerText = `${pctExpiredCount}%`;
-                        document.getElementById('acompListExpiredBar').style.width = `${pctExpiredCount}%`;
-                    });
-                }
-            },
-
-            loans: {
-                calc: function() {
-                    const v = app.utils.parse(document.getElementById('loanValue').value);
-                    const r = parseFloat(document.getElementById('loanRate').value) || 0;
-                    const t = v + (v * (r / 100));
-                    document.getElementById('loanTotal').innerText = app.utils.fmtRaw(t);
-                },
-                add: function() {
-                    const c = document.getElementById('loanClient').value.trim();
-                    const v = document.getElementById('loanValue').value.trim();
-                    const r = document.getElementById('loanRate').value.trim();
-                    const d = document.getElementById('loanDays').value.trim();
-                    const w = document.getElementById('loanWhats').value.trim();
-
-                    if (!c || !v || !r || !d || !w) {
-                        alert('Preencha os campos obrigatórios para o empréstimo.');
+                        app.logs.add("Entrou no sistema");
                         return;
                     }
 
-                    const dtVenc = new Date();
-                    dtVenc.setDate(dtVenc.getDate() + parseInt(d));
-                    const dtS = dtVenc.toISOString().split('T')[0];
+                    db.ref('users').once('value', snap => {
+                        let found = false;
+                        let userDB = null;
+                        let userKey = null;
 
-                    db.ref('loans').push({
-                        cliente: c,
-                        valorOriginal: v,
-                        taxaJuros: r,
-                        status: 'ativo',
-                        dataVencimento: dtS,
-                        whatsApp: w,
-                        dataCriacao: new Date().toISOString(),
-                        createdBy: app.currentUser.usuario
-                    }).then(() => {
-                        app.logs.add(`Gerou empréstimo de ${v} para ${c}`);
-                        document.getElementById('loanClient').value = '';
-                        document.getElementById('loanValue').value = '';
-                        document.getElementById('loanRate').value = '';
-                        document.getElementById('loanDays').value = '';
-                        document.getElementById('loanWhats').value = '';
-                        document.getElementById('loanTotal').innerText = '0,00';
-                    });
-                },
-                render: function(filterUser) {
-                    db.ref('loans').on('value', snap => {
-                        let html = '';
-                        let alertsHtml = '';
-                        let count = 0;
-                        let tOrig = 0, tPago = 0, tPend = 0, tLucro = 0;
-
-                        const now = new Date();
-                        now.setHours(0,0,0,0);
-
-                        snap.forEach(child => {
-                            const l = child.val();
-                            if (filterUser === 'consolidado' || l.createdBy === filterUser) {
-                                count++;
-                                const original = app.utils.parse(l.valorOriginal);
-                                const juros = app.utils.parse(l.valorOriginal) * (parseFloat(l.taxaJuros) / 100);
-                                const total = original + juros;
-
-                                tOrig += original;
-                                tLucro += juros;
-
-                                if (l.status === 'pago') {
-                                    tPago += total;
-                                } else {
-                                    tPend += total;
-                                    const dVenc = new Date(l.dataVencimento + 'T23:59:59');
-                                    const diffMs = dVenc - now;
-                                    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
-                                    if (diffDays <= 2) {
-                                        alertsHtml += `<div class="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/40 p-4 rounded-2xl flex items-center justify-between pulse-alert card-entry select-none">
-                                            <div>
-                                                <p class="text-xs font-black text-slate-800 dark:text-white uppercase tracking-tight">${l.cliente}</p>
-                                                <p class="text-[9px] font-black uppercase text-amber-600 tracking-wider">Vence ${diffDays < 0 ? 'há ' + Math.abs(diffDays) + ' dias' : diffDays === 0 ? 'hoje' : 'em ' + diffDays + ' dias'}</p>
-                                            </div>
-                                            <button onclick="app.loans.waDirect('${l.whatsApp}', '${l.cliente}', '${app.utils.fmtRaw(total)}', '${l.dataVencimento}')" class="bg-emerald-600 hover:bg-emerald-700 text-white w-10 h-10 flex items-center justify-center rounded-xl shadow-lg transition-colors"><i class="fa-brands fa-whatsapp text-lg"></i></button>
-                                        </div>`;
-                                    }
-                                }
-
-                                const dtV = l.dataVencimento.split('-');
-                                const dtFmt = `${dtV[2]}/${dtV[1]}/${dtV[0]}`;
-
-                                let actionButtons = '';
-                                if (l.status === 'pago') {
-                                    if (app.currentUser.role === 'admin') {
-                                        actionButtons = `<button onclick="app.loans.del('${child.key}', '${l.cliente}')" class="text-slate-400 hover:text-red-500 font-bold p-2 text-sm transition-colors"><i class="fa-solid fa-trash-can"></i></button>`;
-                                    }
-                                } else {
-                                    actionButtons = `
-                                        <button onclick="app.loans.waDirect('${l.whatsApp}', '${l.cliente}', '${app.utils.fmtRaw(total)}', '${l.dataVencimento}')" class="text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 p-2 text-lg rounded-xl transition-all" title="Cobrar cliente"><i class="fa-brands fa-whatsapp"></i></button>
-                                        <button onclick="app.loans.editPrompt('${child.key}')" class="text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-2 text-lg rounded-xl transition-all"><i class="fa-solid fa-pen"></i></button>
-                                        <button onclick="app.loans.del('${child.key}', '${l.cliente}')" class="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 text-lg rounded-xl transition-all"><i class="fa-solid fa-trash-can"></i></button>
-                                        <button onclick="app.loans.pay('${child.key}', '${l.cliente}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-black tracking-widest transition-all">BAIXA</button>
-                                    `;
-                                }
-
-                                html += `<div class="bg-white dark:bg-darkCard p-6 rounded-3xl border dark:border-slate-800 shadow-sm flex flex-col justify-between card-entry select-none hover:shadow-md transition-all">
-                                    <div>
-                                        <div class="flex justify-between items-start mb-4">
-                                            <div class="w-2/3">
-                                                <h4 class="text-base font-black dark:text-white uppercase tracking-tight">${l.cliente}</h4>
-                                                <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Responsável: @${l.createdBy}</p>
-                                            </div>
-                                            <div>
-                                                ${l.status === 'pago' 
-                                                    ? '<span class="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider">Finalizado</span>' 
-                                                    : '<span class="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider">Ativo</span>'}
-                                            </div>
-                                        </div>
-                                        <div class="grid grid-cols-2 gap-4 bg-slate-50/80 dark:bg-slate-800/30 p-4 rounded-2xl border dark:border-slate-800">
-                                            <div>
-                                                <p class="text-[8px] font-black uppercase text-slate-400 tracking-wider">Data do Vencimento</p>
-                                                <p class="text-xs font-black dark:text-white mt-0.5">${dtFmt}</p>
-                                            </div>
-                                            <div>
-                                                <p class="text-[8px] font-black uppercase text-slate-400 tracking-wider">Total com Juros</p>
-                                                <p class="text-sm font-black text-blue-600 dark:text-blue-400 mt-0.5">${app.utils.fmt(total)}</p>
-                                            </div>
-                                        </div>
-                                        <div class="grid grid-cols-2 gap-4 mt-3 px-1">
-                                            <div>
-                                                <p class="text-[8px] font-bold uppercase text-slate-400 tracking-widest">Base Inicial</p>
-                                                <p class="text-xs font-black dark:text-slate-300">${l.valorOriginal}</p>
-                                            </div>
-                                            <div>
-                                                <p class="text-[8px] font-bold uppercase text-slate-400 tracking-widest">Taxa de Rendimento</p>
-                                                <p class="text-xs font-black text-emerald-500">${l.taxaJuros}%</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="flex justify-end gap-3 border-t dark:border-slate-800/80 pt-3 mt-1">
-                                        ${actionButtons}
-                                    </div>
-                                </div>`;
+                        snap.forEach(c => {
+                            const uObj = c.val();
+                            if(uObj.nome.toLowerCase() === u.toLowerCase() && uObj.pass === p) {
+                                userDB = uObj;
+                                userKey = c.key;
+                                found = true;
                             }
                         });
 
-                        document.getElementById('loanList').innerHTML = html || `<div class="col-span-full py-12 text-center text-slate-400 font-bold text-sm">Nenhum empréstimo cadastrado.</div>`;
-                        document.getElementById('loanCounter').innerText = `${count} Cadastros`;
-                        
-                        document.getElementById('metricsTotalOriginal').innerText = app.utils.fmt(tOrig);
-                        document.getElementById('metricsTotalPago').innerText = app.utils.fmt(tPago);
-                        document.getElementById('metricsDiferenca').innerText = app.utils.fmt(tPend);
-                        document.getElementById('metricsLucro').innerText = app.utils.fmt(tLucro);
+                        if(found) {
+                            app.state.user = userDB;
+                            app.state.userId = userKey;
 
-                        const pPct = (tOrig + tLucro) > 0 ? Math.round((tPago / (tOrig + tLucro)) * 100) : 0;
-                        const pendPct = (tOrig + tLucro) > 0 ? Math.round((tPend / (tOrig + tLucro)) * 100) : 0;
-
-                        document.getElementById('userProgressPct').innerText = `${pPct}% Pago`;
-                        document.getElementById('userProgressBarPaid').style.width = `${pPct}%`;
-                        document.getElementById('userProgressBarPending').style.width = `${pendPct}%`;
-
-                        document.getElementById('userProgPaidLabel').innerText = `Pago: ${app.utils.fmt(tPago)}`;
-                        document.getElementById('userProgPendingLabel').innerText = `Pendente: ${app.utils.fmt(tPend)}`;
-
-                        if (alertsHtml) {
-                            document.getElementById('alertList').innerHTML = alertsHtml;
-                            document.getElementById('alertSection').classList.remove('hidden');
+                            if (userDB.isFirstAccess === true) {
+                                document.getElementById('changePasswordModal').classList.remove('hidden');
+                            } else {
+                                app.ui.init();
+                                app.logs.add("Entrou no sistema");
+                            }
                         } else {
-                            document.getElementById('alertSection').classList.add('hidden');
+                            alert('Usuário ou senha incorretos!');
                         }
                     });
                 },
-                pay: function(key, client) {
-                    if (confirm(`Confirmar baixa de pagamento para ${client}?`)) {
-                        db.ref(`loans/${key}`).update({ status: 'pago' }).then(() => {
-                            app.logs.add(`Realizou baixa de pagamento para ${client}`);
-                        });
-                    }
-                },
-                del: function(key, client) {
-                    if (confirm(`Remover definitivamente o registro de ${client}?`)) {
-                        db.ref(`loans/${key}`).remove().then(() => {
-                            app.logs.add(`Excluiu o registro de empréstimo de ${client}`);
-                        });
-                    }
-                },
-                editPrompt: function(key) {
-                    db.ref(`loans/${key}`).once('value', s => {
-                        const l = s.val();
-                        document.getElementById('editModalTitle').innerText = `Editar Empréstimo`;
-                        document.getElementById('editFormFields').innerHTML = `
-                            <div>
-                                <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 block">Nome do Cliente</label>
-                                <input type="text" id="editLClient" value="${l.cliente}" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold">
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 block">Valor Inicial</label>
-                                    <input type="text" id="editLValue" value="${l.valorOriginal}" oninput="app.utils.maskMoney(this)" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold">
-                                </div>
-                                <div>
-                                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 block">Taxa Juros (%)</label>
-                                    <input type="number" id="editLRate" value="${l.taxaJuros}" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold">
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 block">Data Vencimento</label>
-                                    <input type="date" id="editLDue" value="${l.dataVencimento}" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold">
-                                </div>
-                                <div>
-                                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 block">WhatsApp</label>
-                                    <input type="text" id="editLWhats" value="${l.whatsApp}" oninput="app.utils.maskPhone(this)" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold">
-                                </div>
-                            </div>
-                        `;
 
-                        document.getElementById('btnSaveEdit').onclick = function() {
-                            const nc = document.getElementById('editLClient').value.trim();
-                            const nv = document.getElementById('editLValue').value.trim();
-                            const nr = document.getElementById('editLRate').value.trim();
-                            const nd = document.getElementById('editLDue').value.trim();
-                            const nw = document.getElementById('editLWhats').value.trim();
-
-                            if (!nc || !nv || !nr || !nd || !nw) { alert('Todos os campos obrigatórios!'); return; }
-
-                            db.ref(`loans/${key}`).update({
-                                cliente: nc, valorOriginal: nv, taxaJuros: nr, dataVencimento: nd, whatsApp: nw
-                            }).then(() => {
-                                app.logs.add(`Editou o empréstimo de ${nc}`);
-                                document.getElementById('editOverlay').classList.remove('show');
-                            });
-                        };
-                        document.getElementById('editOverlay').classList.add('show');
-                    });
-                },
-                waDirect: function(num, client, total, dt) {
-                    const cleanNum = num.replace(/\D/g, '');
-                    const phoneW = cleanNum.startsWith('55') ? cleanNum : `55${cleanNum}`;
-                    const dtV = dt.split('-');
-                    const dtFmt = `${dtV[2]}/${dtV[1]}/${dtV[0]}`;
+                updateFirstPassword: () => {
+                    const np = document.getElementById('modalNewPassInput').value;
+                    const cp = document.getElementById('modalConfirmPassInput').value;
                     
-                    const text = `Olá, ${client}! Passando para lembrar sobre o seu pagamento programado para o dia ${dtFmt}, no valor de R$ ${total}. Se tiver qualquer dúvida, estamos à disposição.`;
-                    document.getElementById('waMessageArea').value = text;
-                    document.getElementById('whatsappOverlay').classList.add('show');
-
-                    document.getElementById('btnSendWa').onclick = function() {
-                        const customT = document.getElementById('waMessageArea').value;
-                        window.open(`https://api.whatsapp.com/send?phone=${phoneW}&text=${encodeURIComponent(customT)}`, '_blank');
-                        document.getElementById('whatsappOverlay').classList.remove('show');
-                    };
-                }
-            },
-
-            suppliers: {
-                add: function() {
-                    const n = document.getElementById('supName').value.trim();
-                    const w = document.getElementById('supWhats').value.trim();
-                    const p = document.getElementById('supPix').value.trim();
-                    const v = document.getElementById('supValue').value.trim();
-
-                    if (!n || !w || !p || !v) {
-                        alert('Preencha os campos para o fornecedor.');
-                        return;
+                    if (np.trim() === "") {
+                        return alert("A nova senha não pode ser vazia.");
+                    }
+                    if (np !== cp) {
+                        return alert("As senhas informadas não coincidem.");
                     }
 
-                    db.ref('suppliers').push({
-                        nome: n,
-                        whatsApp: w,
-                        pix: p,
-                        valor: v,
-                        dataCadastro: new Date().toISOString()
+                    db.ref('users/' + app.state.userId).update({
+                        pass: np,
+                        isFirstAccess: false
                     }).then(() => {
-                        app.logs.add(`Cadastrou investidor/fornecedor ${n}`);
-                        document.getElementById('supName').value = '';
-                        document.getElementById('supWhats').value = '';
-                        document.getElementById('supPix').value = '';
-                        document.getElementById('supValue').value = '';
+                        app.state.user.pass = np;
+                        app.state.user.isFirstAccess = false;
+                        if(document.getElementById('rememberMe').checked) {
+                            localStorage.setItem('ec_pass', np);
+                        }
+                        document.getElementById('changePasswordModal').classList.add('hidden');
+                        app.ui.init();
+                        app.logs.add("Alterou a senha obrigatória do primeiro acesso");
+                        alert("Senha alterada com sucesso!");
                     });
-                },
-                render: function() {
-                    db.ref('suppliers').on('value', snap => {
-                        let html = '';
-                        let count = 0;
-                        snap.forEach(child => {
-                            count++;
-                            const s = child.val();
-                            html += `<div class="bg-white dark:bg-darkCard p-6 rounded-3xl border dark:border-slate-800 shadow-sm flex flex-col justify-between card-entry select-none">
-                                <div>
-                                    <div class="flex justify-between items-start mb-4">
-                                        <div>
-                                            <h4 class="text-base font-black dark:text-white uppercase tracking-tight">${s.nome}</h4>
-                                            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Aporte do Investidor</p>
-                                        </div>
-                                        <span class="bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full">Pix Ativo</span>
-                                    </div>
-                                    <div class="bg-slate-50/80 dark:bg-slate-800/30 p-4 rounded-2xl border dark:border-slate-800 space-y-2.5 mb-2">
-                                        <div class="flex justify-between items-center">
-                                            <span class="text-[9px] font-black uppercase text-slate-400">Total do Aporte</span>
-                                            <span class="text-sm font-black text-amber-600 dark:text-amber-400">${s.valor}</span>
-                                        </div>
-                                        <div class="flex justify-between items-center">
-                                            <span class="text-[9px] font-black uppercase text-slate-400">Chave Cadastrada</span>
-                                            <span class="text-xs font-black dark:text-slate-300 truncate max-w-[140px] text-right">${s.pix}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="flex justify-end gap-2 border-t dark:border-slate-800/80 pt-3">
-                                    <a href="https://wa.me/${s.whatsApp.replace(/\D/g, '')}" target="_blank" class="text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 p-2 text-lg rounded-xl transition-all"><i class="fa-brands fa-whatsapp"></i></a>
-                                    <button onclick="app.suppliers.editPrompt('${child.key}')" class="text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-2 text-lg rounded-xl transition-all"><i class="fa-solid fa-pen"></i></button>
-                                    <button onclick="app.suppliers.del('${child.key}', '${s.nome}')" class="text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 text-lg rounded-xl transition-all"><i class="fa-solid fa-trash-can"></i></button>
-                                </div>
-                            </div>`;
-                        });
-                        document.getElementById('supList').innerHTML = html || '<div class="col-span-full py-12 text-center text-slate-400 font-bold text-sm">Nenhum fornecedor cadastrado.</div>';
-                        document.getElementById('supCounter').innerText = `${count} Cadastros`;
-                    });
-                },
-                del: function(key, name) {
-                    if (confirm(`Remover fornecedor ${name}?`)) {
-                        db.ref(`suppliers/${key}`).remove().then(() => {
-                            app.logs.add(`Excluiu o fornecedor ${name}`);
-                        });
-                    }
-                },
-                editPrompt: function(key) {
-                    db.ref(`suppliers/${key}`).once('value', s => {
-                        const sup = s.val();
-                        document.getElementById('editModalTitle').innerText = `Editar Fornecedor`;
-                        document.getElementById('editFormFields').innerHTML = `
-                            <div>
-                                <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 block">Nome Fornecedor</label>
-                                <input type="text" id="editSName" value="${sup.nome}" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold">
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 block">WhatsApp</label>
-                                    <input type="text" id="editSWhats" value="${sup.whatsApp}" oninput="app.utils.maskPhone(this)" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold">
-                                </div>
-                                <div>
-                                    <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 block">Aporte</label>
-                                    <input type="text" id="editSValue" value="${sup.valor}" oninput="app.utils.maskMoney(this)" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 block">Chave Pix</label>
-                                <input type="text" id="editSPix" value="${sup.pix}" class="w-full p-4 border dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-2xl outline-none font-bold">
-                            </div>
-                        `;
-
-                        document.getElementById('btnSaveEdit').onclick = function() {
-                            const nn = document.getElementById('editSName').value.trim();
-                            const nw = document.getElementById('editSWhats').value.trim();
-                            const nv = document.getElementById('editSValue').value.trim();
-                            const np = document.getElementById('editSPix').value.trim();
-
-                            if (!nn || !nw || !nv || !np) { alert('Todos os campos são obrigatórios!'); return; }
-
-                            db.ref(`suppliers/${key}`).update({
-                                nome: nn, whatsApp: nw, valor: nv, pix: np
-                            }).then(() => {
-                                app.logs.add(`Atualizou dados do fornecedor ${nn}`);
-                                document.getElementById('editOverlay').classList.remove('show');
-                            });
-                        };
-                        document.getElementById('editOverlay').classList.add('show');
-                    });
-                }
-            },
-
-            users: {
-                add: function() {
-                    const n = document.getElementById('newUserName').value.trim();
-                    const u = document.getElementById('newUserEmail').value.trim().toLowerCase();
-                    const p = document.getElementById('newUserPass').value.trim();
-                    const r = document.getElementById('newUserRole').value;
-
-                    if (!n || !u || !p || !r) {
-                        alert('Complete todos os dados do formulário.');
-                        return;
-                    }
-
-                    db.ref('users').push({
-                        nome: n,
-                        usuario: u,
-                        senha: p,
-                        role: r,
-                        forceChange: true,
-                        dataCriacao: new Date().toISOString()
-                    }).then(() => {
-                        app.logs.add(`Cadastrou o usuário ${u} (${r})`);
-                        document.getElementById('newUserName').value = '';
-                        document.getElementById('newUserEmail').value = '';
-                        document.getElementById('newUserPass').value = '';
-                    });
-                },
-                render: function() {
-                    db.ref('users').on('value', snap => {
-                        let html = '';
-                        let count = 0;
-                        snap.forEach(c => {
-                            count++;
-                            const u = c.val();
-                            
-                            let avatarHtml = `<div class="w-11 h-11 rounded-2xl bg-slate-100 dark:bg-slate-800 border dark:border-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center font-black text-sm overflow-hidden border-2">${u.nome.charAt(0).toUpperCase()}</div>`;
-                            if (u.photo) {
-                                avatarHtml = `<div class="w-11 h-11 rounded-2xl overflow-hidden border dark:border-slate-800 border-2"><img src="${u.photo}" class="profile-img"></div>`;
-                            }
-
-                            html += `<div class="bg-white dark:bg-darkCard p-5 rounded-3xl border dark:border-slate-800 shadow-sm flex items-center justify-between card-entry select-none">
-                                <div class="flex items-center gap-4">
-                                    ${avatarHtml}
-                                    <div>
-                                        <h4 class="text-sm font-black dark:text-white uppercase tracking-tight leading-none">${u.nome}</h4>
-                                        <p class="text-[10px] text-slate-400 font-bold mt-1">@${u.usuario}</p>
-                                        <p class="text-[8px] uppercase font-black tracking-widest mt-0.5">Permissão: ${u.role}</p>
-                                    </div>
-                                </div>
-                                <button onclick="if(confirm('Remover o acesso de ${u.nome}?')) db.ref('users/${c.key}').remove()" class="text-red-400 hover:text-red-600 p-2"><i class="fa-solid fa-user-xmark text-lg"></i></button>
-                            </div>`;
-                        });
-                        document.getElementById('userList').innerHTML = html || '<p class="text-center text-slate-400 py-6 font-bold text-sm">Nenhum membro configurado.</p>';
-                        document.getElementById('userCounter').innerText = `${count} Usuários`;
-                    });
-                },
-                uploadPhoto: function(input) {
-                    if (input.files && input.files[0]) {
-                        const r = new FileReader();
-                        r.onload = function(e) {
-                            const base64 = e.target.result;
-                            db.ref(`users/${app.currentUser.key}`).update({ photo: base64 }).then(() => {
-                                app.currentUser.photo = base64;
-                                localStorage.setItem('loggedUser', JSON.stringify(app.currentUser));
-                                document.getElementById('userBadge').innerHTML = `<img src="${base64}" class="profile-img">`;
-                                alert('Foto carregada com sucesso.');
-                            });
-                        };
-                        r.readAsDataURL(input.files[0]);
-                    }
                 }
             },
 
             logs: {
-                add: function(act) {
+                add: (msg) => {
+                    if(!app.state.user) return;
                     db.ref('logs').push({
-                        autor: app.currentUser.nome,
-                        username: app.currentUser.usuario,
-                        acao: act,
-                        data: new Date().toISOString()
+                        msg: msg,
+                        user: app.state.user.nome,
+                        data: new Date().toLocaleDateString('pt-BR'),
+                        hora: new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}),
+                        ts: Date.now()
                     });
                 },
-                render: function() {
-                    db.ref('logs').limitToLast(40).on('value', snap => {
-                        let html = '';
-                        let arr = [];
-                        snap.forEach(c => {
-                            arr.unshift(c.val());
+                clear: () => {
+                    if(confirm("Tem certeza que deseja apagar TODO o histórico? Esta ação não pode ser desfeita.")) {
+                        db.ref('logs').remove();
+                        alert("Histórico removido.");
+                    }
+                }
+            },
+
+            loans: {
+                calc: () => {
+                    const v = app.utils.parseValue(document.getElementById('loanValue').value);
+                    const r = parseFloat(document.getElementById('loanRate').value) || 0;
+                    const total = v + (v * (r / 100));
+                    document.getElementById('loanTotal').innerText = total.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                },
+                loadEdit: (key) => {
+                    db.ref('loans/' + key).once('value', snap => {
+                        const l = snap.val();
+                        app.state.editingLoanKey = key;
+                        document.getElementById('loanClient').value = l.cliente;
+                        document.getElementById('loanValue').value = l.valor;
+                        document.getElementById('loanRate').value = l.taxa || '';
+                        document.getElementById('loanDays').value = l.prazo || '';
+                        document.getElementById('loanWhats').value = l.whats || '';
+                        app.loans.calc();
+                        document.getElementById('loanFormTitle').innerText = "Editar Empréstimo";
+                        document.getElementById('btnSubmitLoan').innerText = "Atualizar Cadastro";
+                    });
+                },
+                openRenewModal: (key) => {
+                    db.ref('loans/' + key).once('value', snap => {
+                        const l = snap.val();
+                        const valBase = app.utils.parseValue(l.valor);
+                        const valTotal = app.utils.parseValue(l.total);
+                        const juroCalculado = valTotal - valBase;
+
+                        document.getElementById('modalRenewKey').value = key;
+                        document.getElementById('modalRenewInterestValue').value = juroCalculado.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                        document.getElementById('modalRenewDays').value = l.prazo || '';
+                        document.getElementById('renewInterestModal').classList.remove('hidden');
+                    });
+                },
+                confirmRenewInterest: () => {
+                    const key = document.getElementById('modalRenewKey').value;
+                    const novoPrazo = document.getElementById('modalRenewDays').value;
+
+                    if (!novoPrazo || isNaN(novoPrazo)) {
+                        return alert("Preencha um prazo válido em dias.");
+                    }
+
+                    db.ref('loans/' + key).once('value', snap => {
+                        const l = snap.val();
+                        const valBase = app.utils.parseValue(l.valor);
+                        const valTotal = app.utils.parseValue(l.total);
+                        const valorJuro = valTotal - valBase;
+
+                        db.ref('renewals').push({
+                            loanKey: key,
+                            cliente: l.cliente,
+                            juroPago: valorJuro,
+                            data: new Date().toLocaleDateString('pt-BR'),
+                            ts: Date.now(),
+                            criadoPor: app.state.user.nome
                         });
 
-                        arr.forEach(l => {
-                            const d = new Date(l.data).toLocaleString('pt-BR');
-                            html += `<div class="bg-white dark:bg-darkCard p-4 rounded-2xl border dark:border-slate-800 flex flex-col md:flex-row justify-between md:items-center gap-3 card-entry select-none hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all">
-                                <div class="flex flex-col gap-1">
-                                    <span class="text-xs font-black dark:text-slate-200 uppercase leading-none">${l.autor} <span class="text-[9px] text-slate-400 font-bold lowercase">@${l.username}</span></span>
-                                    <span class="text-xs font-bold text-slate-600 dark:text-slate-400 leading-relaxed">${l.acao}</span>
+                        db.ref('loans/' + key).update({
+                            dataCriacao: Date.now(),
+                            prazo: parseInt(novoPrazo),
+                            status: 'pendente'
+                        });
+
+                        app.logs.add(`RENOVOU juros: ${l.cliente} (Recebeu R$ ${valorJuro.toLocaleString('pt-BR', {minimumFractionDigits: 2})})`);
+                        document.getElementById('renewInterestModal').classList.add('hidden');
+                    });
+                },
+                add: () => {
+                    const clientName = document.getElementById('loanClient').value;
+                    const data = {
+                        cliente: clientName.trim(),
+                        valor: document.getElementById('loanValue').value,
+                        taxa: document.getElementById('loanRate').value,
+                        prazo: document.getElementById('loanDays').value,
+                        whats: document.getElementById('loanWhats').value,
+                        total: document.getElementById('loanTotal').innerText,
+                        criadoPor: app.state.user.nome
+                    };
+                    if (app.state.editingLoanKey) {
+                        db.ref('loans/' + app.state.editingLoanKey).update(data);
+                        app.logs.add(`ATUALIZOU empréstimo: ${data.cliente}`);
+                        app.state.editingLoanKey = null;
+                        document.getElementById('loanFormTitle').innerText = "Novo Empréstimo";
+                        document.getElementById('btnSubmitLoan').innerText = "Cadastrar";
+                    } else {
+                        data.dataCriacao = Date.now();
+                        data.status = 'pendente';
+                        db.ref('loans').push(data);
+                        app.logs.add(`CADASTROU empréstimo: ${data.cliente}`);
+                    }
+                    document.querySelectorAll('#content-emprestimos input').forEach(i => i.value = '');
+                    document.getElementById('loanTotal').innerText = '0,00';
+                }
+            },
+
+            suppliers: {
+                loadEdit: (key) => {
+                    db.ref('suppliers/' + key).once('value', snap => {
+                        const i = snap.val();
+                        app.state.editingSupKey = key;
+                        document.getElementById('supName').value = i.nome;
+                        document.getElementById('supWhats').value = i.whats || '';
+                        document.getElementById('supPix').value = i.pix || '';
+                        document.getElementById('supValue').value = i.valor || '';
+                        document.getElementById('supFormTitle').innerText = "Editar Fornecedor";
+                        document.getElementById('btnSubmitSup').innerText = "Atualizar Cadastro";
+                    });
+                },
+                add: () => {
+                    const data = {
+                        nome: document.getElementById('supName').value.trim(),
+                        valor: document.getElementById('supValue').value,
+                        pix: document.getElementById('supPix').value,
+                        whats: document.getElementById('supWhats').value
+                    };
+                    if (app.state.editingSupKey) {
+                        db.ref('suppliers/' + app.state.editingSupKey).update(data);
+                        app.logs.add(`ATUALIZOU fornecedor: ${data.nome}`);
+                        app.state.editingSupKey = null;
+                    } else {
+                        db.ref('suppliers').push(data);
+                        app.logs.add(`ADICIONOU fornecedor: ${data.nome}`);
+                    }
+                    document.querySelectorAll('#content-fornecedores input').forEach(i => i.value = '');
+                }
+            },
+
+            users: {
+                add: () => {
+                    const n = document.getElementById('newUserName').value.trim();
+                    const p = document.getElementById('newUserPass').value;
+                    const r = document.getElementById('newUserRole').value;
+                    
+                    db.ref('users').push({ 
+                        nome: n, 
+                        pass: p, 
+                        role: r,
+                        isFirstAccess: true 
+                    });
+                    app.logs.add(`CRIOU USUÁRIO: ${n}`);
+                    document.querySelectorAll('#content-usuarios input').forEach(i => i.value = '');
+                    alert(`Usuário ${n} criado com sucesso! Ele precisará trocar a senha no primeiro acesso.`);
+                },
+                uploadPhoto: (input) => {
+                    const file = input.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = e.target.result;
+                        if(app.state.userId === 'admin_root') localStorage.setItem('admin_photo', img);
+                        else db.ref('users/' + app.state.userId).update({ photo: img });
+                        app.ui.updateBadge(img);
+                        app.logs.add("Alterou foto de perfil");
+                    };
+                    reader.readAsDataURL(file);
+                }
+            },
+
+            ui: {
+                init: () => {
+                    document.getElementById('loginPage').classList.add('hidden');
+                    document.getElementById('dashboard').classList.remove('hidden');
+                    const savedPhoto = (app.state.userId === 'admin_root') ? localStorage.getItem('admin_photo') : app.state.user.photo;
+                    app.ui.updateBadge(savedPhoto);
+                    if(app.state.user.role === 'admin') {
+                        document.getElementById('menuUsuarios').classList.remove('hidden');
+                        document.getElementById('adminLogControls').classList.remove('hidden');
+                        document.getElementById('menuBackup').classList.remove('hidden');
+                    }
+
+                    document.getElementById('filterUser').addEventListener('change', () => {
+                        app.ui.updateDashboardMetrics();
+                    });
+
+                    app.ui.sync();
+                },
+                toggleMenu: (open) => {
+                    const menu = document.getElementById('mobileSidebar');
+                    const overlay = document.getElementById('sidebarOverlay');
+                    if(open) { menu.classList.add('open'); overlay.classList.add('show'); }
+                    else { menu.classList.remove('open'); overlay.classList.remove('show'); }
+                },
+                updateBadge: (img) => {
+                    const b = document.getElementById('userBadge');
+                    if(img) b.innerHTML = `<img src="${img}" class="profile-img">`;
+                    else b.innerHTML = `<span>${app.state.user.nome.charAt(0)}</span>`;
+                },
+                nav: (id) => {
+                    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                    document.getElementById('content-' + id).classList.add('active');
+                    const titles = { 
+                        'emprestimos': 'Empréstimos', 
+                        'acompanhamento': 'Acompanhamento', 
+                        'rendimentos': 'Rendimentos Anuais', 
+                        'fornecedores': 'Fornecedores', 
+                        'usuarios': 'Usuários', 
+                        'alteracoes': 'Alterações', 
+                        'backup': 'Backup do Sistema' 
+                    };
+                    document.getElementById('headerTitle').innerText = titles[id] || id;
+                    app.ui.toggleMenu(false);
+                },
+                openWhatsAppModal: (phone, text) => {
+                    document.getElementById('modalWhatsPhone').value = phone || '';
+                    document.getElementById('modalWhatsMsg').value = text || '';
+                    document.getElementById('whatsappModal').classList.remove('hidden');
+                },
+                sendWhatsAppDirect: () => {
+                    const phoneInput = document.getElementById('modalWhatsPhone').value;
+                    const cleanPhone = app.utils.formatToWhatsAppNumber(phoneInput);
+                    const msg = document.getElementById('modalWhatsMsg').value;
+                    if (!cleanPhone) return alert("Número inválido.");
+                    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+                    document.getElementById('whatsappModal').classList.add('hidden');
+                },
+                clearAcompanhamentoData: () => {
+                    if (confirm("Você tem certeza que deseja zerar os dados de acompanhamento? Todos os empréstimos e renovações serão excluídos permanentemente para reiniciar o ciclo.")) {
+                        db.ref('renewals').remove().then(() => {
+                            db.ref('loans').remove().then(() => {
+                                app.logs.add("LIMPOU dados do sistema para reiniciar o acompanhamento");
+                                alert("Todos os dados de empréstimos e renovações de juros foram reiniciados.");
+                            });
+                        });
+                    }
+                },
+                updateDashboardMetrics: () => {
+                    const filter = document.getElementById('filterUser').value;
+                    let loans = app.state.allLoans;
+                    let renewals = app.state.allRenewals;
+
+                    if (filter !== 'todos') {
+                        loans = loans.filter(l => l.criadoPor === filter);
+                        renewals = renewals.filter(r => r.criadoPor === filter);
+                    }
+
+                    let totalEmprestado = 0;
+                    let totalRecebido = 0;
+                    let aReceber = 0;
+                    let lucroEstimado = 0;
+
+                    renewals.forEach(r => {
+                        totalRecebido += r.juroPago;
+                        lucroEstimado += r.juroPago;
+                    });
+
+                    loans.forEach(l => {
+                        const valBase = app.utils.parseValue(l.valor);
+                        const valTotal = app.utils.parseValue(l.total);
+                        const juros = valTotal - valBase;
+
+                        totalEmprestado += valBase;
+
+                        if (l.status === 'pago') {
+                            totalRecebido += valTotal;
+                            lucroEstimado += juros; 
+                        } else {
+                            aReceber += valTotal;
+                            lucroEstimado += juros;
+                        }
+                    });
+
+                    const totalEsperado = totalRecebido + aReceber;
+                    const percentPago = totalEsperado > 0 ? Math.round((totalRecebido / totalEsperado) * 100) : 0;
+
+                    document.getElementById('progressPercent').innerText = `${percentPago}% Pago`;
+                    document.getElementById('progressBar').style.width = `${percentPago}%`;
+                    document.getElementById('dashPago').innerText = totalRecebido.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                    document.getElementById('dashPendente').innerText = aReceber.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+
+                    document.getElementById('dashTotalEmprestado').innerText = `R$ ${totalEmprestado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+                    document.getElementById('dashTotalRecebido').innerText = `R$ ${totalRecebido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+                    document.getElementById('dashAReceber').innerText = `R$ ${aReceber.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+                    document.getElementById('dashLucroEstimado').innerText = `R$ ${lucroEstimado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+                },
+                updateAnnualMetrics: () => {
+                    const month = document.getElementById('annualMonthFilter').value;
+                    const year = document.getElementById('annualYearFilter').value;
+
+                    let loans = app.state.allLoans;
+                    let renewals = app.state.allRenewals;
+
+                    let totalEmprestado = 0;
+                    let totalRecebido = 0;
+                    let lucroEstimado = 0;
+
+                    loans.forEach(l => {
+                        const dt = new Date(l.dataCriacao);
+                        const lMonth = String(dt.getMonth() + 1).padStart(2, '0');
+                        const lYear = String(dt.getFullYear());
+
+                        if (lMonth === month && lYear === year) {
+                            const valBase = app.utils.parseValue(l.valor);
+                            const valTotal = app.utils.parseValue(l.total);
+                            const juros = valTotal - valBase;
+
+                            totalEmprestado += valBase;
+                            if (l.status === 'pago') {
+                                totalRecebido += valTotal;
+                            }
+                            lucroEstimado += juros;
+                        }
+                    });
+
+                    renewals.forEach(r => {
+                        if (r.data) {
+                            const p = r.data.split('/');
+                            if (p[1] === month && p[2] === year) {
+                                totalRecebido += r.juroPago;
+                                lucroEstimado += r.juroPago;
+                            }
+                        }
+                    });
+
+                    document.getElementById('annualTotalEmprestado').innerText = `R$ ${totalEmprestado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+                    document.getElementById('annualTotalRecebido').innerText = `R$ ${totalRecebido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+                    document.getElementById('annualLucroEstimado').innerText = `R$ ${lucroEstimado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+                },
+                sync: () => {
+                    db.ref('loans').on('value', snap => {
+                        let html = '';
+                        const now = new Date().setHours(0,0,0,0);
+                        app.state.allLoans = [];
+
+                        snap.forEach(c => {
+                            const l = c.val();
+                            l.key = c.key;
+                            app.state.allLoans.push(l);
+
+                            const dVenc = new Date(l.dataCriacao); dVenc.setDate(dVenc.getDate() + parseInt(l.prazo || 0));
+                            const diff = Math.ceil((dVenc - now) / (1000 * 60 * 60 * 24));
+                            let st = l.status || 'pendente'; if(st !== 'pago' && diff < 0) st = 'vencido';
+
+                            html += `
+                            <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border dark:border-slate-800 shadow-sm mb-3">
+                                <p class="font-bold dark:text-white text-sm">
+                                    ${l.cliente} 
+                                    <span class="text-[9px] float-right uppercase px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 font-black">${st}</span>
+                                </p>
+                                <p class="text-[10px] text-slate-500 mt-1">Vence: ${dVenc.toLocaleDateString('pt-BR')} | Total: R$ ${l.total}</p>
+                                <div class="flex gap-2 mt-4 flex-wrap">
+                                    ${st !== 'pago' ? `
+                                        <button onclick="db.ref('loans/${c.key}').update({status:'pago'}); app.logs.add('BAIXA no empréstimo: ${l.cliente}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg text-xs font-bold min-w-[60px]">Baixa</button>
+                                        <button onclick="app.loans.openRenewModal('${c.key}')" class="flex-1 bg-purple-600 text-white py-2 rounded-lg text-xs font-bold min-w-[100px]">Renovar Juros</button>
+                                        <button onclick="app.ui.openWhatsAppModal('${l.whats || ''}', 'Olá ${l.cliente}, lembrete do valor R$ ${l.total}.')" class="flex-1 bg-green-500 text-white py-2 rounded-lg text-xs font-bold min-w-[60px]">Cobrar</button>
+                                    ` : ''}
+                                    <button onclick="app.loans.loadEdit('${c.key}')" class="px-3 py-2 border dark:border-slate-700 rounded-lg text-amber-500"><i class="fa-solid fa-pen"></i></button>
+                                    <button onclick="if(confirm('Excluir?')){db.ref('loans/${c.key}').remove(); app.logs.add('EXCLUIU empréstimo: ${l.cliente}')}" class="px-3 py-2 border dark:border-slate-700 rounded-lg text-red-400"><i class="fa-solid fa-trash-can"></i></button>
                                 </div>
-                                <span class="text-[9px] font-black uppercase text-slate-400 tracking-wider whitespace-nowrap bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border dark:border-slate-700/60 self-start md:self-center">${d}</span>
                             </div>`;
                         });
-                        document.getElementById('logsBody').innerHTML = html || '<p class="text-center text-slate-400 py-6 font-bold text-sm">Nenhum registro no log.</p>';
+                        document.getElementById('loanList').innerHTML = html;
+                        app.ui.updateDashboardMetrics();
+                        app.ui.updateAnnualMetrics();
                     });
-                }
-            },
 
-            data: {
-                exportCsv: function() {
-                    db.ref('/').once('value', snap => {
-                        const data = snap.val();
-                        if (!data) { alert('Nenhum dado encontrado para exportar.'); return; }
-
-                        let csvContent = "\ufeff";
-                        csvContent += "=== EMPRÉSTIMOS ===\r\n";
-                        csvContent += "Cliente;Valor Original;Taxa Juros (%);Vencimento;Status;WhatsApp;Criador;Data Criação\r\n";
-
-                        if (data.loans) {
-                            Object.values(data.loans).forEach(l => {
-                                csvContent += `${l.cliente};"${l.valorOriginal}";${l.taxaJuros};${l.dataVencimento};${l.status};"${l.whatsApp}";${l.createdBy};${l.dataCriacao}\r\n`;
+                    db.ref('renewals').on('value', snap => {
+                        app.state.allRenewals = [];
+                        let html = '';
+                        if (snap.exists()) {
+                            snap.forEach(c => {
+                                const r = c.val();
+                                app.state.allRenewals.push(r);
+                                html += `
+                                <div class="p-3 bg-slate-50 dark:bg-slate-800/40 border-l-4 border-purple-500 rounded-lg shadow-sm flex flex-col justify-between gap-1">
+                                    <div class="flex justify-between items-center">
+                                        <p class="font-bold dark:text-slate-200 text-xs">${r.cliente}</p>
+                                        <span class="text-xs font-black text-purple-600 dark:text-purple-400">+ R$ ${r.juroPago.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
+                                    </div>
+                                    <p class="text-[9px] text-slate-400 font-bold tracking-tight uppercase">
+                                        Pago em: ${r.data} | Registrado por: ${r.criadoPor}
+                                    </p>
+                                </div>`;
                             });
+                            document.getElementById('renewalHistoryList').innerHTML = html;
+                        } else {
+                            document.getElementById('renewalHistoryList').innerHTML = `<p class="text-xs text-slate-500 text-center py-4">Nenhuma renovação de juros registrada.</p>`;
                         }
-
-                        csvContent += "\r\n=== FORNECEDORES ===\r\n";
-                        csvContent += "Nome;WhatsApp;Pix;Valor;Data Cadastro\r\n";
-                        if (data.suppliers) {
-                            Object.values(data.suppliers).forEach(s => {
-                                csvContent += `${s.nome};"${s.whatsApp}";"${s.pix}";"${s.valor}";${s.dataCadastro}\r\n`;
-                            });
-                        }
-
-                        csvContent += "\r\n=== LOGS ===\r\n";
-                        csvContent += "Autor;Ação;Data\r\n";
-                        if (data.logs) {
-                            Object.values(data.logs).forEach(log => {
-                                csvContent += `${log.autor};${log.acao};${log.data}\r\n`;
-                            });
-                        }
-
-                        const b = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                        const u = URL.createObjectURL(b);
-                        const a = document.createElement('a');
-                        a.href = u;
-                        a.setAttribute('download', `ecbusiness_backup_${new Date().toISOString().split('T')[0]}.csv`);
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
+                        app.ui.updateDashboardMetrics();
+                        app.ui.updateAnnualMetrics();
                     });
-                },
-                exportJsonBackup: function() {
-                    db.ref('/').once('value', snap => {
-                        const data = snap.val();
-                        if (!data) { alert('Erro: Nada disponível para backup.'); return; }
 
-                        const b = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                        const u = URL.createObjectURL(b);
-                        const a = document.createElement('a');
-                        a.href = u;
-                        a.setAttribute('download', `ecbusiness_fullbackup_${new Date().getTime()}.json`);
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
+                    db.ref('logs').on('value', snap => {
+                        let logs = [];
+                        if (snap.exists()) {
+                            snap.forEach(c => { logs.push(c.val()); });
+                            document.getElementById('logList').innerHTML = logs.reverse().map(log => `
+                                <div class="p-3 bg-white dark:bg-slate-900 border-l-4 ${log.msg.includes('EXCLUIU') ? 'border-red-500' : 'border-emerald-500'} rounded-lg shadow-sm mb-2">
+                                    <p class="font-bold dark:text-slate-200 text-[11px] mb-2">${log.msg}</p>
+                                    <div class="flex justify-between items-center text-slate-500 font-bold text-[9px] uppercase tracking-tighter bg-slate-50 dark:bg-slate-800/50 p-1 rounded">
+                                        <span><i class="fa-solid fa-pen-nib mr-1"></i> Por: ${log.user}</span>
+                                        <span><i class="fa-solid fa-calendar-day mr-1"></i> ${log.data} às ${log.hora}</span>
+                                    </div>
+                                </div>
+                            `).join('');
+                        } else {
+                            document.getElementById('logList').innerHTML = '';
+                        }
                     });
-                },
-                importJsonBackup: function(input) {
-                    if (input.files && input.files[0]) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            try {
-                                const parse = JSON.parse(e.target.result);
-                                if (confirm('Atenção: A restauração substituirá todos os dados existentes no sistema. Deseja continuar?')) {
-                                    db.ref('/').set(parse).then(() => {
-                                        alert('Backup restaurado com sucesso no sistema!');
-                                        location.reload();
-                                    });
-                                }
-                            } catch (err) {
-                                alert('Arquivo de backup inválido.');
-                            }
-                        };
-                        reader.readAsText(input.files[0]);
-                    }
-                }
-            },
 
-            utils: {
-                maskMoney: function(i) {
-                    let v = i.value.replace(/\D/g, "");
-                    v = (v / 100).toFixed(2) + "";
-                    v = v.replace(".", ",");
-                    v = v.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
-                    i.value = "R$ " + v;
-                    if (v === "NaN") i.value = "";
-                },
-                maskPhone: function(i) {
-                    let v = i.value.replace(/\D/g, "");
-                    if (v.length > 11) v = v.substring(0, 11);
-                    if (v.length > 10) {
-                        i.value = "(" + v.substring(0, 2) + ") " + v.substring(2, 3) + " " + v.substring(3, 7) + "-" + v.substring(7, 11);
-                    } else if (v.length > 6) {
-                        i.value = "(" + v.substring(0, 2) + ") " + v.substring(2, 6) + "-" + v.substring(6, 10);
-                    } else if (v.length > 2) {
-                        i.value = "(" + v.substring(0, 2) + ") " + v.substring(2);
-                    } else {
-                        i.value = v;
-                    }
-                },
-                parse: function(vStr) {
-                    if (!vStr) return 0;
-                    let clean = vStr.replace("R$", "").replace(/\./g, "").replace(",", ".").trim();
-                    return parseFloat(clean) || 0;
-                },
-                fmt: function(v) {
-                    return "R$ " + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                },
-                fmtRaw: function(v) {
-                    return v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    db.ref('suppliers').on('value', snap => {
+                        let html = '';
+                        snap.forEach(c => {
+                            const i = c.val();
+                            html += `<div class="bg-white dark:bg-slate-900 p-4 border dark:border-slate-800 rounded-xl shadow-sm mb-3">
+                                <div class="flex justify-between mb-2">
+                                    <p class="font-bold dark:text-white text-sm">${i.nome}</p>
+                                    <div class="flex gap-2">
+                                        <button onclick="app.suppliers.loadEdit('${c.key}')" class="text-amber-500"><i class="fa-solid fa-pen"></i></button>
+                                        <button onclick="if(confirm('Excluir?')){db.ref('suppliers/${c.key}').remove(); app.logs.add('EXCLUIU fornecedor: ${i.nome}')}" class="text-red-400"><i class="fa-solid fa-trash-can"></i></button>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-amber-600 font-black mb-4">R$ ${i.valor}</p>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button onclick="navigator.clipboard.writeText('${i.pix}'); alert('Pix Copiado!')" class="bg-slate-100 dark:bg-slate-800 p-2 rounded-lg text-[10px] font-bold">Copiar Pix</button>
+                                    <button onclick="app.ui.openWhatsAppModal('${i.whats || ''}', 'Olá ${i.nome}')" class="bg-green-500 text-white p-2 rounded-lg text-[10px] font-bold">WhatsApp</button>
+                                </div>
+                            </div>`;
+                        });
+                        document.getElementById('supList').innerHTML = html;
+                    });
+
+                    db.ref('users').on('value', snap => {
+                        let html = '';
+                        const selectFilter = document.getElementById('filterUser');
+                        selectFilter.innerHTML = '<option value="todos">VISÃO CONSOLIDADA (Todos os Usuários)</option>';
+
+                        snap.forEach(c => {
+                            const u = c.val();
+                            html += `<div class="bg-white dark:bg-slate-900 p-3 border dark:border-slate-800 rounded-lg flex justify-between items-center mb-2 shadow-sm">
+                                <span class="text-sm dark:text-slate-300 font-bold">${u.nome} <small class="text-blue-500 font-bold uppercase text-[10px]">(${u.role})</small></span>
+                                <button onclick="if(confirm('Remover?')){db.ref('users/${c.key}').remove(); app.logs.add('REMOVEU USUÁRIO: ${u.nome}')}" class="text-red-400"><i class="fa-solid fa-trash-can"></i></button>
+                            </div>`;
+
+                            const opt = document.createElement('option');
+                            opt.value = u.nome;
+                            opt.innerText = u.nome.toUpperCase();
+                            selectFilter.appendChild(opt);
+                        });
+                        document.getElementById('userList').innerHTML = html;
+                    });
                 }
             }
-        };
-
-        window.onload = function() {
-            app.auth.autoLogin();
         };
 
         function toggleDarkMode() {
             const html = document.documentElement;
             html.classList.toggle('dark');
-            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
-            updateThemeIcon();
+            const isDark = html.classList.contains('dark');
+            document.getElementById('themeIcon').className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
         }
-
-        function updateThemeIcon() {
-            const icon = document.getElementById('themeIcon');
-            if(document.documentElement.classList.contains('dark')) {
-                icon.className = 'fa-solid fa-sun text-amber-400';
-            } else {
-                icon.className = 'fa-solid fa-moon text-slate-500';
-            }
-        }
-        
         if (localStorage.getItem('theme') === 'dark') {
             document.documentElement.classList.add('dark');
-            updateThemeIcon();
+            document.getElementById('themeIcon').className = 'fa-solid fa-sun';
         }
     </script>
 </body>
